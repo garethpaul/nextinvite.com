@@ -1,0 +1,53 @@
+{% autoescape None %}
+<html>
+<head>
+	<link href='http://fonts.googleapis.com/css?family=Arvo' rel='stylesheet' type='text/css' />
+	<link href='static/style.css' rel='stylesheet' type='text/css' />
+<script type='text/javascript' src='https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js'></script>
+</head>
+<body>
+<div class='container'>
+<div id='head'>Next Invite</div>
+<div id='splitter'></div>
+<h1 id='signup-text'>Sign up for an invite to join Next Invite</h1>
+<div id='signup'>
+	<form action='/signup' id='inviteform' method='post'>
+	
+	<table>
+		<tr>
+			<td>
+				<input type='text' id='email' name='email' value='Email Address'>
+			</td>
+			{{ xsrf_form_html() }}
+			<td>
+				<a href="#" class="BigButton BlueButton" onclick="request_invite(); return false;"><strong>Request Invitation</strong><span></span></a>
+			</td>
+		</tr>
+	</table>
+	</form>
+</div>
+</div>
+
+
+
+<div id='Welcome'>
+<h1>NEXT Invite is a professional dating connector</h1>
+</div>
+
+<script>
+function request_invite(){
+	    event.preventDefault();
+	    $.post('signup', $('#inviteform').serialize(),
+	      function( data ) {
+		$('#inviteform').hide()
+		$('#signup-text').hide()
+		$('#Welcome').hide()
+		$('#signup').html("<h1>Thank You - we will review your application and you should hear shortly whether you've made the list</h1>")
+	      }
+	);
+}
+</script>
+
+
+</body>
+</html>
