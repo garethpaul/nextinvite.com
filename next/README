@@ -1,0 +1,3 @@
+This runs on Google AppEngine you will need a copy of this to get this running.
+
+The dir next contains most of the code to get you started. Right now this just saves data to the appengine datastore.
