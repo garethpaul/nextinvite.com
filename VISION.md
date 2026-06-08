@@ -38,7 +38,7 @@ Contribution rules:
 Datastore-backed apps can hold user data. Do not commit datastore exports,
 session secrets, or production configuration.
 
-## What We Will Not Merge For Now
+## What We Will Not Merge (For Now)
 
 - Private datastore exports
 - Production credentials or secrets
