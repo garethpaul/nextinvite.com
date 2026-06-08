@@ -7,5 +7,6 @@ __pycache__/
 .env.*
 *.log
 appengine-generated/
+local_db.bin
 bulkloader-*
 *.db

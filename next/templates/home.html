@@ -17,7 +17,7 @@
 			<td>
 				<input type='email' id='email' name='email' placeholder='Email Address' required>
 			</td>
-			{{ xsrf_form_html() }}
+			{% raw xsrf_form_html() %}
 			<td>
 				<a href="#" class="BigButton BlueButton" onclick="request_invite(event); return false;"><strong>Request Invitation</strong><span></span></a>
 			</td>
@@ -35,15 +35,19 @@
 
 <script>
 function request_invite(event){
-	    event.preventDefault();
+	    if (event) {
+	        event.preventDefault();
+	    }
 	    $.post('/signup', $('#inviteform').serialize(),
 	      function( data ) {
 		$('#inviteform').hide()
 		$('#signup-text').hide()
 		$('#Welcome').hide()
-		$('#signup').html("<h1>Thank You - we will review your application and you should hear shortly whether you've made the list</h1>")
+		$('#signup').text("Thank You - we will review your application and you should hear shortly whether you've made the list")
 	      }
-	);
+	).fail(function() {
+		$('#signup').text("Please enter a valid email address.")
+	});
 }
 </script>
 

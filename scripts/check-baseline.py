@@ -118,13 +118,17 @@ def main():
     template = read("next/templates/home.html")
     require("{% autoescape None %}" not in template,
             "home template must not disable autoescaping", failures)
+    require("{% raw xsrf_form_html() %}" in template,
+            "XSRF field must be rendered as explicit raw framework markup", failures)
     require("http://fonts.googleapis.com" not in template, "template font URL must use HTTPS", failures)
     require("type='email'" in template and "required" in template,
             "signup form must use required email input", failures)
-    require("request_invite(event)" in template and "event.preventDefault()" in template,
-            "signup click handler must receive the click event explicitly", failures)
+    require("request_invite(event)" in template and "if (event)" in template,
+            "signup click handler must receive and guard the click event explicitly", failures)
     require("$.post('/signup'" in template,
             "signup JavaScript must post to the absolute signup route", failures)
+    require(".fail(" in template and "$('#signup').text(" in template,
+            "signup JavaScript must handle validation errors without HTML injection", failures)
 
     style = read("next/static/style.css")
     require("http://s3.amazonaws.com" not in style, "background asset URL must use HTTPS", failures)
@@ -136,7 +140,7 @@ def main():
             "all App Engine handlers must require secure transport", failures)
 
     gitignore = read(".gitignore")
-    for expected in ["__pycache__/", "*.pyc", ".env", "appengine-generated/", "bulkloader-*"]:
+    for expected in ["__pycache__/", "*.pyc", ".env", "appengine-generated/", "local_db.bin", "bulkloader-*"]:
         require(expected in gitignore, f".gitignore must include {expected}", failures)
 
     try:

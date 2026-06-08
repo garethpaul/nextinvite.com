@@ -17,6 +17,9 @@ needs to avoid requiring a live SDK.
 - Keep XSRF protection enabled on the Tornado WSGI application.
 - Avoid insecure HTTP asset URLs in the template and stylesheet.
 - Require secure App Engine handlers and keep template autoescaping enabled.
+- Render only the framework-provided XSRF field as explicit raw markup.
+- Avoid HTML injection patterns in signup status updates.
+- Ignore local App Engine datastore and environment artifacts.
 - Keep the signup form using browser-native email validation.
 - Add an SDK-free `make check` gate for route, template, config, and docs
   contracts.
