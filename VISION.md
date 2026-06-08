@@ -1,5 +1,8 @@
 ## NextInvite.com Vision
 
+This document explains the current state and direction of the project.
+Project overview and developer docs: [`README.md`](README.md)
+
 NextInvite.com is a Google App Engine-era Python app that stores data in the
 App Engine datastore.
 
