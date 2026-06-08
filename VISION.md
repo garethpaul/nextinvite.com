@@ -1,0 +1,46 @@
+## NextInvite.com Vision
+
+NextInvite.com is a Google App Engine-era Python app that stores data in the
+App Engine datastore.
+
+The repository is useful as a preserved App Engine/Tornado-style web app sample
+with templates, static assets, datastore code, and vendored Tornado modules.
+Project context lives in [`next/README`](next/README).
+
+The goal is to keep the app recoverable while making datastore, hosting, and
+legacy dependency assumptions explicit.
+
+The current focus is:
+
+Priority:
+
+- Preserve the App Engine app structure under `next/`
+- Keep datastore behavior and templates easy to inspect
+- Avoid committing production secrets or private user data
+- Maintain security policy for the app
+
+Next priorities:
+
+- Add root-level setup and deployment notes
+- Document datastore entities and local development requirements
+- Modernize App Engine/Tornado dependencies in a dedicated pass
+- Add route/template verification with fixture data
+
+Contribution rules:
+
+- One PR = one focused route, datastore, dependency, or documentation change.
+- Keep private data and credentials out of git.
+- Verify affected routes locally before pushing.
+- Preserve license and provenance for vendored dependencies.
+
+## Security And Privacy
+
+Datastore-backed apps can hold user data. Do not commit datastore exports,
+session secrets, or production configuration.
+
+## What We Will Not Merge For Now
+
+- Private datastore exports
+- Production credentials or secrets
+- Broad hosting migration without a deployment plan
+- Vendored dependency changes without provenance
