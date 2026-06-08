@@ -39,7 +39,6 @@ Canonical security policy and reporting:
 
 - [`SECURITY.md`](SECURITY.md)
 
-
 Datastore-backed apps can hold user data. Do not commit datastore exports,
 session secrets, or production configuration.
 
