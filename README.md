@@ -54,11 +54,13 @@ When the required SDK or runtime is unavailable, use static checks and source re
 ## Configuration and Secrets
 
 - Detected references to Parse, Twitter. Keep API keys, OAuth credentials, tokens, and account-specific values in local configuration only.
+- Keep App Engine generated files, datastore exports, logs, `.env` files, and private signup email data out of git.
 
 ## Security and Privacy Notes
 
 - Signup emails are private user data. Do not commit datastore exports or logs
   containing submitted addresses.
+- App Engine handlers are configured with `secure: always`, and templates should not disable Tornado autoescaping.
 - Review changes touching authentication or token handling; examples from the scan include next/base.py, next/markdown.py, next/tornado/auth.py, next/tornado/database.py, and 6 more.
 - Review changes touching external API calls or credential-adjacent configuration; examples from the scan include next/markdown.py, next/tornado/auth.py, next/tornado/autoreload.py, next/tornado/escape.py, and 6 more.
 - Review changes touching network requests, sockets, or service endpoints; examples from the scan include next/base.py, next/markdown.py, next/server.py, next/static/style.css, and 6 more.
@@ -70,6 +72,7 @@ When the required SDK or runtime is unavailable, use static checks and source re
 
 ## Maintenance Notes
 
+- Run `make check` before pushing route, template, App Engine config, or security documentation changes.
 - See `SECURITY.md` for vulnerability reporting and safe research guidance.
 - See `VISION.md` for project direction and contribution guardrails.
 

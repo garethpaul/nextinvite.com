@@ -86,6 +86,7 @@ def load_server_module():
 def main():
     failures = []
     required = [
+        ".gitignore",
         "CHANGES.md",
         "Makefile",
         "README.md",
@@ -115,11 +116,15 @@ def main():
     require('"xsrf_cookies": True' in server, "XSRF protection must remain enabled", failures)
 
     template = read("next/templates/home.html")
+    require("{% autoescape None %}" not in template,
+            "home template must not disable autoescaping", failures)
     require("http://fonts.googleapis.com" not in template, "template font URL must use HTTPS", failures)
     require("type='email'" in template and "required" in template,
             "signup form must use required email input", failures)
-    require("event.preventDefault()" not in template,
-            "signup click handler must not depend on global event", failures)
+    require("request_invite(event)" in template and "event.preventDefault()" in template,
+            "signup click handler must receive the click event explicitly", failures)
+    require("$.post('/signup'" in template,
+            "signup JavaScript must post to the absolute signup route", failures)
 
     style = read("next/static/style.css")
     require("http://s3.amazonaws.com" not in style, "background asset URL must use HTTPS", failures)
@@ -127,6 +132,12 @@ def main():
     app_yaml = read("next/app.yaml")
     require("runtime: python" in app_yaml and "script: server.py" in app_yaml,
             "App Engine runtime and script mapping must stay documented", failures)
+    require(app_yaml.count("secure: always") >= 4,
+            "all App Engine handlers must require secure transport", failures)
+
+    gitignore = read(".gitignore")
+    for expected in ["__pycache__/", "*.pyc", ".env", "appengine-generated/", "bulkloader-*"]:
+        require(expected in gitignore, f".gitignore must include {expected}", failures)
 
     try:
         module = load_server_module()

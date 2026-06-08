@@ -20,6 +20,7 @@ Priority:
 - Preserve the App Engine app structure under `next/`
 - Keep datastore behavior and templates easy to inspect
 - Avoid committing production secrets or private user data
+- Keep signup templates autoescaped and App Engine handlers on secure transport
 - Maintain security policy for the app
 - Keep signup email handling validated and covered by static contracts
 

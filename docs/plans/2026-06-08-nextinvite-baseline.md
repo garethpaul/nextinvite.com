@@ -16,6 +16,7 @@ needs to avoid requiring a live SDK.
 - Validate and normalize signup email addresses before storing them.
 - Keep XSRF protection enabled on the Tornado WSGI application.
 - Avoid insecure HTTP asset URLs in the template and stylesheet.
+- Require secure App Engine handlers and keep template autoescaping enabled.
 - Keep the signup form using browser-native email validation.
 - Add an SDK-free `make check` gate for route, template, config, and docs
   contracts.

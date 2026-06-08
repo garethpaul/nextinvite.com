@@ -35,6 +35,9 @@ Helpful reports include:
 - Review found infrastructure, deployment, proxy, or cloud configuration; changes in those areas should receive security-focused review before merge.
 - Review found secret-like configuration names that require careful review before use; changes in those areas should receive security-focused review before merge.
 - No primary dependency manifest was detected in the repository root. If dependencies are added later, include a manifest and prefer reproducible installation instructions.
+- Run `make check` after changing signup routes, templates, App Engine config, vendored dependency boundaries, or security docs.
+- Signup emails are private user data. Do not commit datastore exports, request logs, local App Engine data, `.env` files, or production configuration.
+- App Engine handlers should keep `secure: always`, and templates should not disable Tornado autoescaping.
 
 ## Service and API Notes
 
@@ -42,7 +45,7 @@ For web services, APIs, sockets, or scraping workflows, prioritize reports invol
 
 ## Dependency and Supply Chain Security
 
-Dependency updates should come from trusted package managers and should keep lockfiles in sync when lockfiles exist. Do not commit credentials, private keys, tokens, generated secrets, or machine-local configuration. If a vulnerability depends on a compromised package, typosquatting risk, insecure transitive dependency, or unsafe build step, include the package name, affected version, and the path through which it is used.
+Dependency updates should come from trusted package managers and should keep lockfiles in sync when lockfiles exist. Do not commit credentials, private keys, tokens, generated secrets, datastore exports, private signup data, or machine-local configuration. If a vulnerability depends on a compromised package, typosquatting risk, insecure transitive dependency, or unsafe build step, include the package name, affected version, and the path through which it is used.
 
 ## Safe Research Guidelines
 
