@@ -44,3 +44,6 @@ session secrets, or production configuration.
 - Production credentials or secrets
 - Broad hosting migration without a deployment plan
 - Vendored dependency changes without provenance
+
+This list is a roadmap guardrail, not a permanent rule.
+Strong user demand and strong technical rationale can change it.
