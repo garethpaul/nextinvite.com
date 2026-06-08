@@ -15,6 +15,18 @@ from google.appengine.api import users
 from google.appengine.ext import db
 import base
 
+
+EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+
+def normalize_email(email):
+    return email.strip().lower()
+
+
+def is_valid_email(email):
+    return bool(email and EMAIL_RE.match(email))
+
+
 class SignUp(db.Model):
     """A single blog entry."""
     email = db.TextProperty()
@@ -26,9 +38,16 @@ class HomeHandler(base.BaseHandler):
 		
 class SignUpHandler(base.BaseHandler):
 	def post(self):
+		email = normalize_email(self.get_argument('email', ''))
+		if not is_valid_email(email):
+			self.set_status(400)
+			self.write("invalid email")
+			return
+
 		s = SignUp()
-		s.email = self.get_argument('email')
+		s.email = email
 		s.put()
+		self.write("ok")
 
 settings = {
     "blog_title": u"Next invite",

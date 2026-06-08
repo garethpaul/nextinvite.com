@@ -39,11 +39,15 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 
 ## Running or Using the Project
 
-- No single runtime entry point was identified. Start by reading the source files and manifests listed above.
+- The legacy App Engine entry point is `next/server.py`, configured by
+  `next/app.yaml`.
+- Run the app with a compatible first-generation App Engine Python SDK when one
+  is available.
 
 ## Testing and Verification
 
-- No dedicated automated test command was identified from the checked-in files. Verify changes by running the relevant build or manually exercising the sample.
+- `make check`
+- `python3 scripts/check-baseline.py`
 
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.
 
@@ -53,6 +57,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
 
 ## Security and Privacy Notes
 
+- Signup emails are private user data. Do not commit datastore exports or logs
+  containing submitted addresses.
 - Review changes touching authentication or token handling; examples from the scan include next/base.py, next/markdown.py, next/tornado/auth.py, next/tornado/database.py, and 6 more.
 - Review changes touching external API calls or credential-adjacent configuration; examples from the scan include next/markdown.py, next/tornado/auth.py, next/tornado/autoreload.py, next/tornado/escape.py, and 6 more.
 - Review changes touching network requests, sockets, or service endpoints; examples from the scan include next/base.py, next/markdown.py, next/server.py, next/static/style.css, and 6 more.

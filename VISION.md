@@ -21,13 +21,14 @@ Priority:
 - Keep datastore behavior and templates easy to inspect
 - Avoid committing production secrets or private user data
 - Maintain security policy for the app
+- Keep signup email handling validated and covered by static contracts
 
 Next priorities:
 
 - Add root-level setup and deployment notes
 - Document datastore entities and local development requirements
 - Modernize App Engine/Tornado dependencies in a dedicated pass
-- Add route/template verification with fixture data
+- Expand route/template verification with fixture data
 
 Contribution rules:
 
