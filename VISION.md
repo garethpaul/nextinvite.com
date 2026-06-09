@@ -27,6 +27,7 @@ Priority:
 - Keep email dot validation in place before datastore persistence
 - Keep domain label validation in place before datastore persistence
 - Keep domain label character validation in place before datastore persistence
+- Keep local-part validation in place before datastore persistence
 
 Next priorities:
 
@@ -44,6 +45,7 @@ Contribution rules:
 - Preserve email dot validation when changing signup handling.
 - Preserve domain label validation when changing signup handling.
 - Preserve domain label character validation when changing signup handling.
+- Preserve local-part validation when changing signup handling.
 - Preserve license and provenance for vendored dependencies.
 
 ## Security And Privacy

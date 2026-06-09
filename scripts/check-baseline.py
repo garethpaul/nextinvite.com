@@ -14,6 +14,7 @@ LENGTH_PLAN_PATH = "docs/plans/2026-06-09-signup-email-length.md"
 DOT_PLAN_PATH = "docs/plans/2026-06-09-signup-email-dot-validation.md"
 DOMAIN_LABEL_PLAN_PATH = "docs/plans/2026-06-09-signup-domain-label-validation.md"
 DOMAIN_LABEL_CHARACTER_PLAN_PATH = "docs/plans/2026-06-09-signup-domain-label-characters.md"
+LOCAL_PART_PLAN_PATH = "docs/plans/2026-06-09-signup-email-local-part-validation.md"
 
 
 def read(relative_path):
@@ -105,6 +106,7 @@ def main():
         DOT_PLAN_PATH,
         DOMAIN_LABEL_PLAN_PATH,
         DOMAIN_LABEL_CHARACTER_PLAN_PATH,
+        LOCAL_PART_PLAN_PATH,
         "scripts/check-baseline.py",
     ]
     for path in required:
@@ -126,6 +128,9 @@ def main():
             "signup route must validate domain label length and hyphen boundaries", failures)
     require("DOMAIN_LABEL_RE" in server and "[a-z0-9-]" in server,
             "signup route must validate domain label characters", failures)
+    require("LOCAL_PART_RE" in server and "MAX_LOCAL_PART_LENGTH = 64" in server and
+            "has_valid_local_part" in server,
+            "signup route must validate local part length and characters", failures)
     require("MAX_EMAIL_LENGTH = 254" in server and "len(email) <= MAX_EMAIL_LENGTH" in server,
             "signup route must enforce the 254-character email length limit", failures)
     require("self.set_status(400)" in server and 'self.write("invalid email")' in server,
@@ -167,9 +172,13 @@ def main():
         require(module.normalize_email(" USER@Example.COM ") == "user@example.com",
                 "normalize_email must trim and lowercase", failures)
         require(module.is_valid_email("user@example.com"), "valid email must be accepted", failures)
+        require(module.is_valid_email("user+tag@example.com"),
+                "plus-tagged local part must be accepted", failures)
         valid_254_email = ("a" * 64) + "@" + ("b" * 63) + "." + ("c" * 63) + "." + ("d" * 61)
         require(module.is_valid_email(valid_254_email),
                 "254-character email must be accepted", failures)
+        require(not module.is_valid_email(("a" * 65) + "@example.com"),
+                "65-character local part must be rejected", failures)
         require(not module.is_valid_email("a@" + ("b" * 251) + ".c"),
                 "255-character email must be rejected", failures)
         require(not module.is_valid_email(".user@example.com"),
@@ -180,6 +189,10 @@ def main():
                 "consecutive-dot email local part must be rejected", failures)
         require(not module.is_valid_email("user@example..com"),
                 "consecutive-dot email domain must be rejected", failures)
+        require(not module.is_valid_email("user<>@example.com"),
+                "angle-bracket local part must be rejected", failures)
+        require(not module.is_valid_email("jos\u00e9@example.com"),
+                "non-ASCII local part must be rejected", failures)
         require(not module.is_valid_email("user@-example.com"),
                 "leading-hyphen domain label must be rejected", failures)
         require(not module.is_valid_email("user@example-.com"),
@@ -205,6 +218,8 @@ def main():
             "docs must mention domain label validation", failures)
     require("domain label character validation" in docs.lower(),
             "docs must mention domain label character validation", failures)
+    require("local-part validation" in docs.lower(),
+            "docs must mention local-part validation", failures)
     changes = read("CHANGES.md")
     require("email dot validation" in changes.lower(),
             "CHANGES must mention email dot validation", failures)
@@ -212,6 +227,8 @@ def main():
             "CHANGES must mention domain label validation", failures)
     require("domain label character validation" in changes.lower(),
             "CHANGES must mention domain label character validation", failures)
+    require("local-part validation" in changes.lower(),
+            "CHANGES must mention local-part validation", failures)
 
     plan = read(PLAN_PATH)
     require("status: completed" in plan and "Verification" in plan,
@@ -228,6 +245,9 @@ def main():
     domain_label_character_plan = read(DOMAIN_LABEL_CHARACTER_PLAN_PATH) if (ROOT / DOMAIN_LABEL_CHARACTER_PLAN_PATH).is_file() else ""
     require("status: completed" in domain_label_character_plan and "make check" in domain_label_character_plan,
             "domain label character validation plan must record status and verification", failures)
+    local_part_plan = read(LOCAL_PART_PLAN_PATH) if (ROOT / LOCAL_PART_PLAN_PATH).is_file() else ""
+    require("status: completed" in local_part_plan and "make check" in local_part_plan,
+            "local-part validation plan must record status and verification", failures)
 
     if failures:
         for failure in failures:

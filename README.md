@@ -49,6 +49,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   than 63 characters before datastore writes.
 - Domain label character validation rejects labels with underscores or
   non-ASCII characters before datastore writes.
+- Local-part validation accepts bounded unquoted ASCII local parts, including
+  plus tags, and rejects unsafe or non-ASCII characters before datastore writes.
 
 ## Testing and Verification
 
@@ -73,6 +75,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   63 characters before persistence.
 - Domain label character validation allows only ASCII letters, digits, and
   interior hyphens before persistence.
+- Local-part validation keeps signup addresses to bounded unquoted ASCII local
+  parts before persistence.
 - App Engine handlers are configured with `secure: always`, and templates should not disable Tornado autoescaping.
 - Review changes touching authentication or token handling; examples from the scan include next/base.py, next/markdown.py, next/tornado/auth.py, next/tornado/database.py, and 6 more.
 - Review changes touching external API calls or credential-adjacent configuration; examples from the scan include next/markdown.py, next/tornado/auth.py, next/tornado/autoreload.py, next/tornado/escape.py, and 6 more.

@@ -43,6 +43,8 @@ Helpful reports include:
   labels over 63 characters before datastore persistence.
 - Domain label character validation should reject underscores, non-ASCII labels,
   and other characters outside ASCII letters, digits, and interior hyphens.
+- Local-part validation should accept bounded unquoted ASCII local parts and
+  reject unsafe or non-ASCII characters before datastore persistence.
 - App Engine handlers should keep `secure: always`, and templates should not disable Tornado autoescaping.
 
 ## Service and API Notes

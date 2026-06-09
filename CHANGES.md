@@ -15,5 +15,6 @@
   characters.
 - Added domain label character validation for underscores, non-ASCII labels, and
   characters outside ASCII letters, digits, and interior hyphens.
+- Added local-part validation for bounded unquoted ASCII signup addresses.
 - Added local App Engine datastore artifact ignore rules.
 - Added `make check` and an SDK-free baseline contract checker.

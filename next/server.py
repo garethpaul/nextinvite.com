@@ -17,8 +17,10 @@ import base
 
 
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+LOCAL_PART_RE = re.compile(r"^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+$")
 DOMAIN_LABEL_RE = re.compile(r"^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$")
 MAX_EMAIL_LENGTH = 254
+MAX_LOCAL_PART_LENGTH = 64
 
 
 def normalize_email(email):
@@ -35,6 +37,19 @@ def has_valid_email_dots(email):
         return False
 
     return all(label for label in domain.split(".")) and ".." not in domain
+
+
+def has_valid_local_part(email):
+    parts = email.split("@", 1)
+    if len(parts) != 2:
+        return False
+
+    local = parts[0]
+    return bool(
+        local
+        and len(local) <= MAX_LOCAL_PART_LENGTH
+        and LOCAL_PART_RE.match(local)
+    )
 
 
 def has_valid_domain_labels(email):
@@ -58,6 +73,7 @@ def is_valid_email(email):
         email
         and len(email) <= MAX_EMAIL_LENGTH
         and EMAIL_RE.match(email)
+        and has_valid_local_part(email)
         and has_valid_email_dots(email)
         and has_valid_domain_labels(email)
     )
