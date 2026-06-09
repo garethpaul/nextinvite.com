@@ -18,6 +18,8 @@
 - Added local-part validation for bounded unquoted ASCII signup addresses.
 - Added top-level domain validation for one-character and all-numeric final
   labels.
+- Added dependency-free signup JavaScript so invite requests no longer depend
+  on remote jQuery.
 - Added `make lint`, `make test`, and `make build` aliases so the standard
   gate commands run the same SDK-free static baseline as `make check`.
 - Added local App Engine datastore artifact ignore rules.

@@ -2,7 +2,6 @@
 <head>
 	<link href='https://fonts.googleapis.com/css?family=Arvo' rel='stylesheet' type='text/css' />
 	<link href='/static/style.css' rel='stylesheet' type='text/css' />
-<script type='text/javascript' src='https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js'></script>
 </head>
 <body>
 <div class='container'>
@@ -34,20 +33,47 @@
 </div>
 
 <script>
+function set_display(id, value) {
+	    document.getElementById(id).style.display = value;
+}
+
+function set_text(id, value) {
+	    document.getElementById(id).textContent = value;
+}
+
+function serialize_form(form) {
+	    var pairs = [];
+	    for (var index = 0; index < form.elements.length; index++) {
+	        var field = form.elements[index];
+	        if (!field.name || field.disabled) {
+	            continue;
+	        }
+	        pairs.push(encodeURIComponent(field.name) + '=' + encodeURIComponent(field.value));
+	    }
+	    return pairs.join('&');
+}
+
 function request_invite(event){
 	    if (event) {
 	        event.preventDefault();
 	    }
-	    $.post('/signup', $('#inviteform').serialize(),
-	      function( data ) {
-		$('#inviteform').hide()
-		$('#signup-text').hide()
-		$('#Welcome').hide()
-		$('#signup').text("Thank You - we will review your application and you should hear shortly whether you've made the list")
-	      }
-	).fail(function() {
-		$('#signup').text("Please enter a valid email address.")
-	});
+	    var request = new XMLHttpRequest();
+	    request.open('POST', '/signup', true);
+	    request.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
+	    request.onreadystatechange = function() {
+	        if (request.readyState !== 4) {
+	            return;
+	        }
+	        if (request.status >= 200 && request.status < 300) {
+	            set_display('inviteform', 'none');
+	            set_display('signup-text', 'none');
+	            set_display('Welcome', 'none');
+	            set_text('signup', "Thank You - we will review your application and you should hear shortly whether you've made the list");
+	            return;
+	        }
+	        set_text('signup', 'Please enter a valid email address.');
+	    };
+	    request.send(serialize_form(document.getElementById('inviteform')));
 }
 </script>
 

@@ -29,6 +29,7 @@ Priority:
 - Keep domain label character validation in place before datastore persistence
 - Keep local-part validation in place before datastore persistence
 - Keep top-level domain validation in place before datastore persistence
+- Keep dependency-free signup JavaScript in place for the invite form
 - Keep `make lint`, `make test`, `make build`, and `make check` on the
   SDK-free static baseline
 
@@ -50,6 +51,7 @@ Contribution rules:
 - Preserve domain label character validation when changing signup handling.
 - Preserve local-part validation when changing signup handling.
 - Preserve top-level domain validation when changing signup handling.
+- Preserve dependency-free signup JavaScript when changing the invite form.
 - Run `make lint`, `make test`, `make build`, and `make check` before pushing
   route, template, or validation changes.
 - Preserve license and provenance for vendored dependencies.
@@ -62,6 +64,8 @@ Canonical security policy and reporting:
 
 Datastore-backed apps can hold user data. Do not commit datastore exports,
 session secrets, or production configuration.
+Dependency-free signup JavaScript should avoid remote script dependencies while
+submitting only form-encoded invite requests.
 
 ## What We Will Not Merge (For Now)
 

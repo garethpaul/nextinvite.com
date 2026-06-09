@@ -49,11 +49,17 @@ Helpful reports include:
   reject unsafe or non-ASCII characters before datastore persistence.
 - Top-level domain validation should reject one-character or all-numeric final
   labels before datastore persistence.
+- Dependency-free signup JavaScript should keep the invite form independent of
+  remote jQuery while preserving XSRF form serialization.
 - App Engine handlers should keep `secure: always`, and templates should not disable Tornado autoescaping.
 
 ## Service and API Notes
 
 For web services, APIs, sockets, or scraping workflows, prioritize reports involving authentication bypass, authorization errors, injection, server-side request forgery, unsafe deserialization, credential leakage, data exposure, or denial-of-service conditions. Use test accounts and minimal proof-of-concept traffic only.
+
+For this app, reports involving dependency-free signup JavaScript should state
+whether the invite form can be made to depend on remote scripts or inject HTML
+through status messages.
 
 ## Dependency and Supply Chain Security
 

@@ -17,6 +17,7 @@ DOMAIN_LABEL_CHARACTER_PLAN_PATH = "docs/plans/2026-06-09-signup-domain-label-ch
 LOCAL_PART_PLAN_PATH = "docs/plans/2026-06-09-signup-email-local-part-validation.md"
 TOP_LEVEL_DOMAIN_PLAN_PATH = "docs/plans/2026-06-09-signup-top-level-domain-validation.md"
 MAKE_GATE_PLAN_PATH = "docs/plans/2026-06-09-make-gate-aliases.md"
+SIGNUP_JS_PLAN_PATH = "docs/plans/2026-06-09-dependency-free-signup-javascript.md"
 
 
 def read(relative_path):
@@ -111,6 +112,7 @@ def main():
         LOCAL_PART_PLAN_PATH,
         TOP_LEVEL_DOMAIN_PLAN_PATH,
         MAKE_GATE_PLAN_PATH,
+        SIGNUP_JS_PLAN_PATH,
         "scripts/check-baseline.py",
     ]
     for path in required:
@@ -150,16 +152,22 @@ def main():
     require("{% raw xsrf_form_html() %}" in template,
             "XSRF field must be rendered as explicit raw framework markup", failures)
     require("http://fonts.googleapis.com" not in template, "template font URL must use HTTPS", failures)
+    require("ajax.googleapis.com" not in template and "jquery" not in template.lower(),
+            "signup template must not depend on remote jQuery", failures)
     require("type='email'" in template and "required" in template,
             "signup form must use required email input", failures)
     require("maxlength='254'" in template,
             "signup form must expose the server email length limit", failures)
     require("request_invite(event)" in template and "if (event)" in template,
             "signup click handler must receive and guard the click event explicitly", failures)
-    require("$.post('/signup'" in template,
-            "signup JavaScript must post to the absolute signup route", failures)
-    require(".fail(" in template and "$('#signup').text(" in template,
-            "signup JavaScript must handle validation errors without HTML injection", failures)
+    require("new XMLHttpRequest()" in template and "request.open('POST', '/signup', true)" in template,
+            "signup JavaScript must post to the absolute signup route without jQuery", failures)
+    require("serialize_form" in template and "encodeURIComponent(field.name)" in template and "encodeURIComponent(field.value)" in template,
+            "signup JavaScript must serialize form fields safely", failures)
+    require("request.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8')" in template,
+            "signup JavaScript must submit form-encoded data", failures)
+    require("textContent" in template and ".html(" not in template,
+            "signup JavaScript must handle responses without HTML injection", failures)
 
     style = read("next/static/style.css")
     require("http://s3.amazonaws.com" not in style, "background asset URL must use HTTPS", failures)
@@ -244,6 +252,8 @@ def main():
             "docs must mention local-part validation", failures)
     require("top-level domain validation" in docs.lower(),
             "docs must mention top-level domain validation", failures)
+    require("dependency-free signup javascript" in docs.lower(),
+            "docs must mention dependency-free signup JavaScript", failures)
     changes = read("CHANGES.md")
     require("email dot validation" in changes.lower(),
             "CHANGES must mention email dot validation", failures)
@@ -255,6 +265,8 @@ def main():
             "CHANGES must mention local-part validation", failures)
     require("top-level domain validation" in changes.lower(),
             "CHANGES must mention top-level domain validation", failures)
+    require("dependency-free signup javascript" in changes.lower(),
+            "CHANGES must mention dependency-free signup JavaScript", failures)
     for phrase in ["make lint", "make test", "make build", "make check"]:
         require(phrase in changes, f"CHANGES must mention {phrase}", failures)
 
@@ -282,6 +294,9 @@ def main():
     make_gate_plan = read(MAKE_GATE_PLAN_PATH) if (ROOT / MAKE_GATE_PLAN_PATH).is_file() else ""
     require("status: completed" in make_gate_plan and "make lint" in make_gate_plan and "make build" in make_gate_plan,
             "make gate alias plan must record status and verification", failures)
+    signup_js_plan = read(SIGNUP_JS_PLAN_PATH) if (ROOT / SIGNUP_JS_PLAN_PATH).is_file() else ""
+    require("status: completed" in signup_js_plan and "make check" in signup_js_plan,
+            "dependency-free signup JavaScript plan must record status and verification", failures)
 
     if failures:
         for failure in failures:
