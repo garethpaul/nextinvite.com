@@ -36,8 +36,26 @@ def has_valid_email_dots(email):
     return all(label for label in domain.split(".")) and ".." not in domain
 
 
+def has_valid_domain_labels(email):
+    parts = email.split("@", 1)
+    if len(parts) != 2:
+        return False
+
+    labels = parts[1].split(".")
+    return all(
+        label and len(label) <= 63 and not label.startswith("-") and not label.endswith("-")
+        for label in labels
+    )
+
+
 def is_valid_email(email):
-    return bool(email and len(email) <= MAX_EMAIL_LENGTH and EMAIL_RE.match(email) and has_valid_email_dots(email))
+    return bool(
+        email
+        and len(email) <= MAX_EMAIL_LENGTH
+        and EMAIL_RE.match(email)
+        and has_valid_email_dots(email)
+        and has_valid_domain_labels(email)
+    )
 
 
 class SignUp(db.Model):

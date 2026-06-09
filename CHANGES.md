@@ -11,5 +11,7 @@
 - Capped signup email input at the 254-character address boundary in both the
   template and server validator.
 - Added email dot validation for leading, trailing, and consecutive dot cases.
+- Added domain label validation for leading/trailing hyphens and labels over 63
+  characters.
 - Added local App Engine datastore artifact ignore rules.
 - Added `make check` and an SDK-free baseline contract checker.

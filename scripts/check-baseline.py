@@ -12,6 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PLAN_PATH = "docs/plans/2026-06-08-nextinvite-baseline.md"
 LENGTH_PLAN_PATH = "docs/plans/2026-06-09-signup-email-length.md"
 DOT_PLAN_PATH = "docs/plans/2026-06-09-signup-email-dot-validation.md"
+DOMAIN_LABEL_PLAN_PATH = "docs/plans/2026-06-09-signup-domain-label-validation.md"
 
 
 def read(relative_path):
@@ -101,6 +102,7 @@ def main():
         PLAN_PATH,
         LENGTH_PLAN_PATH,
         DOT_PLAN_PATH,
+        DOMAIN_LABEL_PLAN_PATH,
         "scripts/check-baseline.py",
     ]
     for path in required:
@@ -117,6 +119,9 @@ def main():
             "signup route must validate and normalize email addresses", failures)
     require("has_valid_email_dots" in server,
             "signup route must reject unsafe email dot placement", failures)
+    require("has_valid_domain_labels" in server and "len(label) <= 63" in server and
+            'not label.startswith("-")' in server and 'not label.endswith("-")' in server,
+            "signup route must validate domain label length and hyphen boundaries", failures)
     require("MAX_EMAIL_LENGTH = 254" in server and "len(email) <= MAX_EMAIL_LENGTH" in server,
             "signup route must enforce the 254-character email length limit", failures)
     require("self.set_status(400)" in server and 'self.write("invalid email")' in server,
@@ -158,7 +163,8 @@ def main():
         require(module.normalize_email(" USER@Example.COM ") == "user@example.com",
                 "normalize_email must trim and lowercase", failures)
         require(module.is_valid_email("user@example.com"), "valid email must be accepted", failures)
-        require(module.is_valid_email("a@" + ("b" * 250) + ".c"),
+        valid_254_email = ("a" * 64) + "@" + ("b" * 63) + "." + ("c" * 63) + "." + ("d" * 61)
+        require(module.is_valid_email(valid_254_email),
                 "254-character email must be accepted", failures)
         require(not module.is_valid_email("a@" + ("b" * 251) + ".c"),
                 "255-character email must be rejected", failures)
@@ -170,6 +176,12 @@ def main():
                 "consecutive-dot email local part must be rejected", failures)
         require(not module.is_valid_email("user@example..com"),
                 "consecutive-dot email domain must be rejected", failures)
+        require(not module.is_valid_email("user@-example.com"),
+                "leading-hyphen domain label must be rejected", failures)
+        require(not module.is_valid_email("user@example-.com"),
+                "trailing-hyphen domain label must be rejected", failures)
+        require(not module.is_valid_email("user@" + ("a" * 64) + ".com"),
+                "64-character domain label must be rejected", failures)
         require(not module.is_valid_email("not-an-email"), "invalid email must be rejected", failures)
     except Exception as error:
         failures.append(f"server helper contracts failed: {error}")
@@ -179,9 +191,13 @@ def main():
         require(phrase in docs.lower(), f"docs must mention {phrase}", failures)
     require("email dot validation" in docs.lower(),
             "docs must mention email dot validation", failures)
+    require("domain label validation" in docs.lower(),
+            "docs must mention domain label validation", failures)
     changes = read("CHANGES.md")
     require("email dot validation" in changes.lower(),
             "CHANGES must mention email dot validation", failures)
+    require("domain label validation" in changes.lower(),
+            "CHANGES must mention domain label validation", failures)
 
     plan = read(PLAN_PATH)
     require("status: completed" in plan and "Verification" in plan,
@@ -192,6 +208,9 @@ def main():
     dot_plan = read(DOT_PLAN_PATH) if (ROOT / DOT_PLAN_PATH).is_file() else ""
     require("status: completed" in dot_plan and "dot" in dot_plan,
             "email dot validation plan must record status and boundary", failures)
+    domain_label_plan = read(DOMAIN_LABEL_PLAN_PATH) if (ROOT / DOMAIN_LABEL_PLAN_PATH).is_file() else ""
+    require("status: completed" in domain_label_plan and "domain label" in domain_label_plan.lower(),
+            "domain label validation plan must record status and boundary", failures)
 
     if failures:
         for failure in failures:

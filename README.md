@@ -45,6 +45,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   is available.
 - Invite signup emails are normalized, format-checked, and capped at the
   conventional 254-character address length before datastore writes.
+- Domain label validation rejects labels with leading/trailing hyphens or more
+  than 63 characters before datastore writes.
 
 ## Testing and Verification
 
@@ -65,6 +67,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
 - The signup form and server validator both enforce the 254-character email
   length boundary before persistence.
 - Email dot validation rejects leading, trailing, and consecutive dot cases before persistence.
+- Domain label validation rejects leading/trailing hyphen labels and labels over
+  63 characters before persistence.
 - App Engine handlers are configured with `secure: always`, and templates should not disable Tornado autoescaping.
 - Review changes touching authentication or token handling; examples from the scan include next/base.py, next/markdown.py, next/tornado/auth.py, next/tornado/database.py, and 6 more.
 - Review changes touching external API calls or credential-adjacent configuration; examples from the scan include next/markdown.py, next/tornado/auth.py, next/tornado/autoreload.py, next/tornado/escape.py, and 6 more.

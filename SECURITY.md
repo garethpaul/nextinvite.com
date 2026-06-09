@@ -39,6 +39,8 @@ Helpful reports include:
 - Signup emails are private user data. Do not commit datastore exports, request logs, local App Engine data, `.env` files, or production configuration.
 - Signup email inputs should stay normalized, format-checked, and capped at the 254-character address boundary before datastore persistence.
 - Email dot validation should reject leading, trailing, and consecutive dot cases before datastore persistence.
+- Domain label validation should reject leading/trailing hyphen labels and
+  labels over 63 characters before datastore persistence.
 - App Engine handlers should keep `secure: always`, and templates should not disable Tornado autoescaping.
 
 ## Service and API Notes
