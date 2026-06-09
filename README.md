@@ -51,6 +51,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   non-ASCII characters before datastore writes.
 - Local-part validation accepts bounded unquoted ASCII local parts, including
   plus tags, and rejects unsafe or non-ASCII characters before datastore writes.
+- Top-level domain validation rejects one-character or all-numeric final labels
+  before datastore writes.
 
 ## Testing and Verification
 
@@ -77,6 +79,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   interior hyphens before persistence.
 - Local-part validation keeps signup addresses to bounded unquoted ASCII local
   parts before persistence.
+- Top-level domain validation keeps final domain labels to plausible public
+  email suffixes before persistence.
 - App Engine handlers are configured with `secure: always`, and templates should not disable Tornado autoescaping.
 - Review changes touching authentication or token handling; examples from the scan include next/base.py, next/markdown.py, next/tornado/auth.py, next/tornado/database.py, and 6 more.
 - Review changes touching external API calls or credential-adjacent configuration; examples from the scan include next/markdown.py, next/tornado/auth.py, next/tornado/autoreload.py, next/tornado/escape.py, and 6 more.

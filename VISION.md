@@ -28,6 +28,7 @@ Priority:
 - Keep domain label validation in place before datastore persistence
 - Keep domain label character validation in place before datastore persistence
 - Keep local-part validation in place before datastore persistence
+- Keep top-level domain validation in place before datastore persistence
 
 Next priorities:
 
@@ -46,6 +47,7 @@ Contribution rules:
 - Preserve domain label validation when changing signup handling.
 - Preserve domain label character validation when changing signup handling.
 - Preserve local-part validation when changing signup handling.
+- Preserve top-level domain validation when changing signup handling.
 - Preserve license and provenance for vendored dependencies.
 
 ## Security And Privacy

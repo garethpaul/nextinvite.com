@@ -68,6 +68,22 @@ def has_valid_domain_labels(email):
     )
 
 
+def has_valid_top_level_domain(email):
+    parts = email.split("@", 1)
+    if len(parts) != 2:
+        return False
+
+    labels = parts[1].split(".")
+    if not labels:
+        return False
+
+    top_level_label = labels[-1]
+    return len(top_level_label) >= 2 and any(
+        character.isalpha()
+        for character in top_level_label
+    )
+
+
 def is_valid_email(email):
     return bool(
         email
@@ -76,6 +92,7 @@ def is_valid_email(email):
         and has_valid_local_part(email)
         and has_valid_email_dots(email)
         and has_valid_domain_labels(email)
+        and has_valid_top_level_domain(email)
     )
 
 

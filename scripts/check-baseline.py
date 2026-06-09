@@ -15,6 +15,7 @@ DOT_PLAN_PATH = "docs/plans/2026-06-09-signup-email-dot-validation.md"
 DOMAIN_LABEL_PLAN_PATH = "docs/plans/2026-06-09-signup-domain-label-validation.md"
 DOMAIN_LABEL_CHARACTER_PLAN_PATH = "docs/plans/2026-06-09-signup-domain-label-characters.md"
 LOCAL_PART_PLAN_PATH = "docs/plans/2026-06-09-signup-email-local-part-validation.md"
+TOP_LEVEL_DOMAIN_PLAN_PATH = "docs/plans/2026-06-09-signup-top-level-domain-validation.md"
 
 
 def read(relative_path):
@@ -107,6 +108,7 @@ def main():
         DOMAIN_LABEL_PLAN_PATH,
         DOMAIN_LABEL_CHARACTER_PLAN_PATH,
         LOCAL_PART_PLAN_PATH,
+        TOP_LEVEL_DOMAIN_PLAN_PATH,
         "scripts/check-baseline.py",
     ]
     for path in required:
@@ -131,6 +133,9 @@ def main():
     require("LOCAL_PART_RE" in server and "MAX_LOCAL_PART_LENGTH = 64" in server and
             "has_valid_local_part" in server,
             "signup route must validate local part length and characters", failures)
+    require("has_valid_top_level_domain" in server and "top_level_label" in server and
+            "character.isalpha()" in server,
+            "signup route must validate top-level domain length and alphabetic content", failures)
     require("MAX_EMAIL_LENGTH = 254" in server and "len(email) <= MAX_EMAIL_LENGTH" in server,
             "signup route must enforce the 254-character email length limit", failures)
     require("self.set_status(400)" in server and 'self.write("invalid email")' in server,
@@ -205,6 +210,12 @@ def main():
                 "underscore domain label must be rejected", failures)
         require(not module.is_valid_email("user@\u00e9xample.com"),
                 "non-ASCII domain label must be rejected", failures)
+        require(module.is_valid_email("user@example.xn--p1ai"),
+                "punycode-style top-level domain must be accepted", failures)
+        require(not module.is_valid_email("user@example.c"),
+                "single-character top-level domain must be rejected", failures)
+        require(not module.is_valid_email("user@example.123"),
+                "all-numeric top-level domain must be rejected", failures)
         require(not module.is_valid_email("not-an-email"), "invalid email must be rejected", failures)
     except Exception as error:
         failures.append(f"server helper contracts failed: {error}")
@@ -220,6 +231,8 @@ def main():
             "docs must mention domain label character validation", failures)
     require("local-part validation" in docs.lower(),
             "docs must mention local-part validation", failures)
+    require("top-level domain validation" in docs.lower(),
+            "docs must mention top-level domain validation", failures)
     changes = read("CHANGES.md")
     require("email dot validation" in changes.lower(),
             "CHANGES must mention email dot validation", failures)
@@ -229,6 +242,8 @@ def main():
             "CHANGES must mention domain label character validation", failures)
     require("local-part validation" in changes.lower(),
             "CHANGES must mention local-part validation", failures)
+    require("top-level domain validation" in changes.lower(),
+            "CHANGES must mention top-level domain validation", failures)
 
     plan = read(PLAN_PATH)
     require("status: completed" in plan and "Verification" in plan,
@@ -248,6 +263,9 @@ def main():
     local_part_plan = read(LOCAL_PART_PLAN_PATH) if (ROOT / LOCAL_PART_PLAN_PATH).is_file() else ""
     require("status: completed" in local_part_plan and "make check" in local_part_plan,
             "local-part validation plan must record status and verification", failures)
+    top_level_domain_plan = read(TOP_LEVEL_DOMAIN_PLAN_PATH) if (ROOT / TOP_LEVEL_DOMAIN_PLAN_PATH).is_file() else ""
+    require("status: completed" in top_level_domain_plan and "make check" in top_level_domain_plan,
+            "top-level domain validation plan must record status and verification", failures)
 
     if failures:
         for failure in failures:
