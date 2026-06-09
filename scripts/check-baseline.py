@@ -13,6 +13,7 @@ PLAN_PATH = "docs/plans/2026-06-08-nextinvite-baseline.md"
 LENGTH_PLAN_PATH = "docs/plans/2026-06-09-signup-email-length.md"
 DOT_PLAN_PATH = "docs/plans/2026-06-09-signup-email-dot-validation.md"
 DOMAIN_LABEL_PLAN_PATH = "docs/plans/2026-06-09-signup-domain-label-validation.md"
+DOMAIN_LABEL_CHARACTER_PLAN_PATH = "docs/plans/2026-06-09-signup-domain-label-characters.md"
 
 
 def read(relative_path):
@@ -103,6 +104,7 @@ def main():
         LENGTH_PLAN_PATH,
         DOT_PLAN_PATH,
         DOMAIN_LABEL_PLAN_PATH,
+        DOMAIN_LABEL_CHARACTER_PLAN_PATH,
         "scripts/check-baseline.py",
     ]
     for path in required:
@@ -122,6 +124,8 @@ def main():
     require("has_valid_domain_labels" in server and "len(label) <= 63" in server and
             'not label.startswith("-")' in server and 'not label.endswith("-")' in server,
             "signup route must validate domain label length and hyphen boundaries", failures)
+    require("DOMAIN_LABEL_RE" in server and "[a-z0-9-]" in server,
+            "signup route must validate domain label characters", failures)
     require("MAX_EMAIL_LENGTH = 254" in server and "len(email) <= MAX_EMAIL_LENGTH" in server,
             "signup route must enforce the 254-character email length limit", failures)
     require("self.set_status(400)" in server and 'self.write("invalid email")' in server,
@@ -182,6 +186,12 @@ def main():
                 "trailing-hyphen domain label must be rejected", failures)
         require(not module.is_valid_email("user@" + ("a" * 64) + ".com"),
                 "64-character domain label must be rejected", failures)
+        require(module.is_valid_email("user@sub-domain.example.com"),
+                "interior-hyphen domain label must be accepted", failures)
+        require(not module.is_valid_email("user@exa_mple.com"),
+                "underscore domain label must be rejected", failures)
+        require(not module.is_valid_email("user@\u00e9xample.com"),
+                "non-ASCII domain label must be rejected", failures)
         require(not module.is_valid_email("not-an-email"), "invalid email must be rejected", failures)
     except Exception as error:
         failures.append(f"server helper contracts failed: {error}")
@@ -193,11 +203,15 @@ def main():
             "docs must mention email dot validation", failures)
     require("domain label validation" in docs.lower(),
             "docs must mention domain label validation", failures)
+    require("domain label character validation" in docs.lower(),
+            "docs must mention domain label character validation", failures)
     changes = read("CHANGES.md")
     require("email dot validation" in changes.lower(),
             "CHANGES must mention email dot validation", failures)
     require("domain label validation" in changes.lower(),
             "CHANGES must mention domain label validation", failures)
+    require("domain label character validation" in changes.lower(),
+            "CHANGES must mention domain label character validation", failures)
 
     plan = read(PLAN_PATH)
     require("status: completed" in plan and "Verification" in plan,
@@ -211,6 +225,9 @@ def main():
     domain_label_plan = read(DOMAIN_LABEL_PLAN_PATH) if (ROOT / DOMAIN_LABEL_PLAN_PATH).is_file() else ""
     require("status: completed" in domain_label_plan and "domain label" in domain_label_plan.lower(),
             "domain label validation plan must record status and boundary", failures)
+    domain_label_character_plan = read(DOMAIN_LABEL_CHARACTER_PLAN_PATH) if (ROOT / DOMAIN_LABEL_CHARACTER_PLAN_PATH).is_file() else ""
+    require("status: completed" in domain_label_character_plan and "make check" in domain_label_character_plan,
+            "domain label character validation plan must record status and verification", failures)
 
     if failures:
         for failure in failures:

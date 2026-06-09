@@ -41,6 +41,8 @@ Helpful reports include:
 - Email dot validation should reject leading, trailing, and consecutive dot cases before datastore persistence.
 - Domain label validation should reject leading/trailing hyphen labels and
   labels over 63 characters before datastore persistence.
+- Domain label character validation should reject underscores, non-ASCII labels,
+  and other characters outside ASCII letters, digits, and interior hyphens.
 - App Engine handlers should keep `secure: always`, and templates should not disable Tornado autoescaping.
 
 ## Service and API Notes

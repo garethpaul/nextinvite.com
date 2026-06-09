@@ -17,6 +17,7 @@ import base
 
 
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+DOMAIN_LABEL_RE = re.compile(r"^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$")
 MAX_EMAIL_LENGTH = 254
 
 
@@ -43,7 +44,11 @@ def has_valid_domain_labels(email):
 
     labels = parts[1].split(".")
     return all(
-        label and len(label) <= 63 and not label.startswith("-") and not label.endswith("-")
+        label
+        and len(label) <= 63
+        and not label.startswith("-")
+        and not label.endswith("-")
+        and DOMAIN_LABEL_RE.match(label)
         for label in labels
     )
 

@@ -26,6 +26,7 @@ Priority:
 - Keep signup email length limits aligned between the template and route handler
 - Keep email dot validation in place before datastore persistence
 - Keep domain label validation in place before datastore persistence
+- Keep domain label character validation in place before datastore persistence
 
 Next priorities:
 
@@ -42,6 +43,7 @@ Contribution rules:
 - Preserve signup input validation boundaries before datastore writes.
 - Preserve email dot validation when changing signup handling.
 - Preserve domain label validation when changing signup handling.
+- Preserve domain label character validation when changing signup handling.
 - Preserve license and provenance for vendored dependencies.
 
 ## Security And Privacy

@@ -13,5 +13,7 @@
 - Added email dot validation for leading, trailing, and consecutive dot cases.
 - Added domain label validation for leading/trailing hyphens and labels over 63
   characters.
+- Added domain label character validation for underscores, non-ASCII labels, and
+  characters outside ASCII letters, digits, and interior hyphens.
 - Added local App Engine datastore artifact ignore rules.
 - Added `make check` and an SDK-free baseline contract checker.
