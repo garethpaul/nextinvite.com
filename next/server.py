@@ -24,8 +24,20 @@ def normalize_email(email):
     return email.strip().lower()
 
 
+def has_valid_email_dots(email):
+    parts = email.split("@", 1)
+    if len(parts) != 2:
+        return False
+
+    local, domain = parts
+    if local.startswith(".") or local.endswith(".") or ".." in local:
+        return False
+
+    return all(label for label in domain.split(".")) and ".." not in domain
+
+
 def is_valid_email(email):
-    return bool(email and len(email) <= MAX_EMAIL_LENGTH and EMAIL_RE.match(email))
+    return bool(email and len(email) <= MAX_EMAIL_LENGTH and EMAIL_RE.match(email) and has_valid_email_dots(email))
 
 
 class SignUp(db.Model):

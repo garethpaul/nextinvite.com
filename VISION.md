@@ -24,6 +24,7 @@ Priority:
 - Maintain security policy for the app
 - Keep signup email handling validated and covered by static contracts
 - Keep signup email length limits aligned between the template and route handler
+- Keep email dot validation in place before datastore persistence
 
 Next priorities:
 
@@ -38,6 +39,7 @@ Contribution rules:
 - Keep private data and credentials out of git.
 - Verify affected routes locally before pushing.
 - Preserve signup input validation boundaries before datastore writes.
+- Preserve email dot validation when changing signup handling.
 - Preserve license and provenance for vendored dependencies.
 
 ## Security And Privacy

@@ -11,6 +11,7 @@ import types
 ROOT = Path(__file__).resolve().parents[1]
 PLAN_PATH = "docs/plans/2026-06-08-nextinvite-baseline.md"
 LENGTH_PLAN_PATH = "docs/plans/2026-06-09-signup-email-length.md"
+DOT_PLAN_PATH = "docs/plans/2026-06-09-signup-email-dot-validation.md"
 
 
 def read(relative_path):
@@ -99,6 +100,7 @@ def main():
         "next/static/style.css",
         PLAN_PATH,
         LENGTH_PLAN_PATH,
+        DOT_PLAN_PATH,
         "scripts/check-baseline.py",
     ]
     for path in required:
@@ -113,6 +115,8 @@ def main():
     server = read("next/server.py")
     require("EMAIL_RE" in server and "normalize_email" in server and "is_valid_email" in server,
             "signup route must validate and normalize email addresses", failures)
+    require("has_valid_email_dots" in server,
+            "signup route must reject unsafe email dot placement", failures)
     require("MAX_EMAIL_LENGTH = 254" in server and "len(email) <= MAX_EMAIL_LENGTH" in server,
             "signup route must enforce the 254-character email length limit", failures)
     require("self.set_status(400)" in server and 'self.write("invalid email")' in server,
@@ -158,6 +162,14 @@ def main():
                 "254-character email must be accepted", failures)
         require(not module.is_valid_email("a@" + ("b" * 251) + ".c"),
                 "255-character email must be rejected", failures)
+        require(not module.is_valid_email(".user@example.com"),
+                "leading-dot email local part must be rejected", failures)
+        require(not module.is_valid_email("user.@example.com"),
+                "trailing-dot email local part must be rejected", failures)
+        require(not module.is_valid_email("user..name@example.com"),
+                "consecutive-dot email local part must be rejected", failures)
+        require(not module.is_valid_email("user@example..com"),
+                "consecutive-dot email domain must be rejected", failures)
         require(not module.is_valid_email("not-an-email"), "invalid email must be rejected", failures)
     except Exception as error:
         failures.append(f"server helper contracts failed: {error}")
@@ -165,6 +177,11 @@ def main():
     docs = read("README.md") + "\n" + read("VISION.md") + "\n" + read("SECURITY.md")
     for phrase in ["make check", "datastore", "private user data"]:
         require(phrase in docs.lower(), f"docs must mention {phrase}", failures)
+    require("email dot validation" in docs.lower(),
+            "docs must mention email dot validation", failures)
+    changes = read("CHANGES.md")
+    require("email dot validation" in changes.lower(),
+            "CHANGES must mention email dot validation", failures)
 
     plan = read(PLAN_PATH)
     require("status: completed" in plan and "Verification" in plan,
@@ -172,6 +189,9 @@ def main():
     length_plan = read(LENGTH_PLAN_PATH)
     require("status: completed" in length_plan and "254-character" in length_plan,
             "email length plan must record status and boundary", failures)
+    dot_plan = read(DOT_PLAN_PATH) if (ROOT / DOT_PLAN_PATH).is_file() else ""
+    require("status: completed" in dot_plan and "dot" in dot_plan,
+            "email dot validation plan must record status and boundary", failures)
 
     if failures:
         for failure in failures:
