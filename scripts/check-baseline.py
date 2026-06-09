@@ -16,6 +16,7 @@ DOMAIN_LABEL_PLAN_PATH = "docs/plans/2026-06-09-signup-domain-label-validation.m
 DOMAIN_LABEL_CHARACTER_PLAN_PATH = "docs/plans/2026-06-09-signup-domain-label-characters.md"
 LOCAL_PART_PLAN_PATH = "docs/plans/2026-06-09-signup-email-local-part-validation.md"
 TOP_LEVEL_DOMAIN_PLAN_PATH = "docs/plans/2026-06-09-signup-top-level-domain-validation.md"
+MAKE_GATE_PLAN_PATH = "docs/plans/2026-06-09-make-gate-aliases.md"
 
 
 def read(relative_path):
@@ -109,6 +110,7 @@ def main():
         DOMAIN_LABEL_CHARACTER_PLAN_PATH,
         LOCAL_PART_PLAN_PATH,
         TOP_LEVEL_DOMAIN_PLAN_PATH,
+        MAKE_GATE_PLAN_PATH,
         "scripts/check-baseline.py",
     ]
     for path in required:
@@ -168,6 +170,15 @@ def main():
     require(app_yaml.count("secure: always") >= 4,
             "all App Engine handlers must require secure transport", failures)
 
+    makefile = read("Makefile")
+    for expected in [
+        ".PHONY: build check lint static-check test verify",
+        "check: verify",
+        "verify: static-check",
+        "lint test build: static-check",
+    ]:
+        require(expected in makefile, f"Makefile must expose standard gate alias: {expected}", failures)
+
     gitignore = read(".gitignore")
     for expected in ["__pycache__/", "*.pyc", ".env", "appengine-generated/", "local_db.bin", "bulkloader-*"]:
         require(expected in gitignore, f".gitignore must include {expected}", failures)
@@ -221,7 +232,7 @@ def main():
         failures.append(f"server helper contracts failed: {error}")
 
     docs = read("README.md") + "\n" + read("VISION.md") + "\n" + read("SECURITY.md")
-    for phrase in ["make check", "datastore", "private user data"]:
+    for phrase in ["make lint", "make test", "make build", "make check", "datastore", "private user data"]:
         require(phrase in docs.lower(), f"docs must mention {phrase}", failures)
     require("email dot validation" in docs.lower(),
             "docs must mention email dot validation", failures)
@@ -244,6 +255,8 @@ def main():
             "CHANGES must mention local-part validation", failures)
     require("top-level domain validation" in changes.lower(),
             "CHANGES must mention top-level domain validation", failures)
+    for phrase in ["make lint", "make test", "make build", "make check"]:
+        require(phrase in changes, f"CHANGES must mention {phrase}", failures)
 
     plan = read(PLAN_PATH)
     require("status: completed" in plan and "Verification" in plan,
@@ -266,6 +279,9 @@ def main():
     top_level_domain_plan = read(TOP_LEVEL_DOMAIN_PLAN_PATH) if (ROOT / TOP_LEVEL_DOMAIN_PLAN_PATH).is_file() else ""
     require("status: completed" in top_level_domain_plan and "make check" in top_level_domain_plan,
             "top-level domain validation plan must record status and verification", failures)
+    make_gate_plan = read(MAKE_GATE_PLAN_PATH) if (ROOT / MAKE_GATE_PLAN_PATH).is_file() else ""
+    require("status: completed" in make_gate_plan and "make lint" in make_gate_plan and "make build" in make_gate_plan,
+            "make gate alias plan must record status and verification", failures)
 
     if failures:
         for failure in failures:

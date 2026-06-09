@@ -35,7 +35,9 @@ Helpful reports include:
 - Review found infrastructure, deployment, proxy, or cloud configuration; changes in those areas should receive security-focused review before merge.
 - Review found secret-like configuration names that require careful review before use; changes in those areas should receive security-focused review before merge.
 - No primary dependency manifest was detected in the repository root. If dependencies are added later, include a manifest and prefer reproducible installation instructions.
-- Run `make check` after changing signup routes, templates, App Engine config, vendored dependency boundaries, or security docs.
+- Run `make lint`, `make test`, `make build`, and `make check` after changing
+  signup routes, templates, App Engine config, vendored dependency boundaries,
+  or security docs.
 - Signup emails are private user data. Do not commit datastore exports, request logs, local App Engine data, `.env` files, or production configuration.
 - Signup email inputs should stay normalized, format-checked, and capped at the 254-character address boundary before datastore persistence.
 - Email dot validation should reject leading, trailing, and consecutive dot cases before datastore persistence.

@@ -56,6 +56,9 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 
 ## Testing and Verification
 
+- `make lint`
+- `make test`
+- `make build`
 - `make check`
 - `python3 scripts/check-baseline.py`
 
@@ -93,7 +96,10 @@ When the required SDK or runtime is unavailable, use static checks and source re
 
 ## Maintenance Notes
 
-- Run `make check` before pushing route, template, App Engine config, or security documentation changes.
+- Run `make lint`, `make test`, `make build`, and `make check` before pushing
+  route, template, App Engine config, or security documentation changes.
+- See `docs/plans/2026-06-09-make-gate-aliases.md` for the local verification
+  gate aliases.
 - See `SECURITY.md` for vulnerability reporting and safe research guidance.
 - See `VISION.md` for project direction and contribution guardrails.
 
