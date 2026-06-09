@@ -10,6 +10,7 @@ import types
 
 ROOT = Path(__file__).resolve().parents[1]
 PLAN_PATH = "docs/plans/2026-06-08-nextinvite-baseline.md"
+LENGTH_PLAN_PATH = "docs/plans/2026-06-09-signup-email-length.md"
 
 
 def read(relative_path):
@@ -97,6 +98,7 @@ def main():
         "next/templates/home.html",
         "next/static/style.css",
         PLAN_PATH,
+        LENGTH_PLAN_PATH,
         "scripts/check-baseline.py",
     ]
     for path in required:
@@ -111,6 +113,8 @@ def main():
     server = read("next/server.py")
     require("EMAIL_RE" in server and "normalize_email" in server and "is_valid_email" in server,
             "signup route must validate and normalize email addresses", failures)
+    require("MAX_EMAIL_LENGTH = 254" in server and "len(email) <= MAX_EMAIL_LENGTH" in server,
+            "signup route must enforce the 254-character email length limit", failures)
     require("self.set_status(400)" in server and 'self.write("invalid email")' in server,
             "invalid signup emails must return a deterministic 400", failures)
     require('"xsrf_cookies": True' in server, "XSRF protection must remain enabled", failures)
@@ -123,6 +127,8 @@ def main():
     require("http://fonts.googleapis.com" not in template, "template font URL must use HTTPS", failures)
     require("type='email'" in template and "required" in template,
             "signup form must use required email input", failures)
+    require("maxlength='254'" in template,
+            "signup form must expose the server email length limit", failures)
     require("request_invite(event)" in template and "if (event)" in template,
             "signup click handler must receive and guard the click event explicitly", failures)
     require("$.post('/signup'" in template,
@@ -148,6 +154,10 @@ def main():
         require(module.normalize_email(" USER@Example.COM ") == "user@example.com",
                 "normalize_email must trim and lowercase", failures)
         require(module.is_valid_email("user@example.com"), "valid email must be accepted", failures)
+        require(module.is_valid_email("a@" + ("b" * 250) + ".c"),
+                "254-character email must be accepted", failures)
+        require(not module.is_valid_email("a@" + ("b" * 251) + ".c"),
+                "255-character email must be rejected", failures)
         require(not module.is_valid_email("not-an-email"), "invalid email must be rejected", failures)
     except Exception as error:
         failures.append(f"server helper contracts failed: {error}")
@@ -159,6 +169,9 @@ def main():
     plan = read(PLAN_PATH)
     require("status: completed" in plan and "Verification" in plan,
             "plan must be completed and include verification", failures)
+    length_plan = read(LENGTH_PLAN_PATH)
+    require("status: completed" in length_plan and "254-character" in length_plan,
+            "email length plan must record status and boundary", failures)
 
     if failures:
         for failure in failures:

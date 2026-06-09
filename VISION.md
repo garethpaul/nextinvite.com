@@ -23,6 +23,7 @@ Priority:
 - Keep signup templates autoescaped and App Engine handlers on secure transport
 - Maintain security policy for the app
 - Keep signup email handling validated and covered by static contracts
+- Keep signup email length limits aligned between the template and route handler
 
 Next priorities:
 
@@ -36,6 +37,7 @@ Contribution rules:
 - One PR = one focused route, datastore, dependency, or documentation change.
 - Keep private data and credentials out of git.
 - Verify affected routes locally before pushing.
+- Preserve signup input validation boundaries before datastore writes.
 - Preserve license and provenance for vendored dependencies.
 
 ## Security And Privacy

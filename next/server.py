@@ -17,6 +17,7 @@ import base
 
 
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+MAX_EMAIL_LENGTH = 254
 
 
 def normalize_email(email):
@@ -24,7 +25,7 @@ def normalize_email(email):
 
 
 def is_valid_email(email):
-    return bool(email and EMAIL_RE.match(email))
+    return bool(email and len(email) <= MAX_EMAIL_LENGTH and EMAIL_RE.match(email))
 
 
 class SignUp(db.Model):

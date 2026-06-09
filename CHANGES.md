@@ -8,5 +8,7 @@
 - Updated the signup form to use required email input semantics.
 - Rendered the XSRF hidden field as explicit raw framework markup and switched
   signup status messages to text-only updates.
+- Capped signup email input at the 254-character address boundary in both the
+  template and server validator.
 - Added local App Engine datastore artifact ignore rules.
 - Added `make check` and an SDK-free baseline contract checker.
