@@ -30,6 +30,7 @@ Priority:
 - Keep local-part validation in place before datastore persistence
 - Keep top-level domain validation in place before datastore persistence
 - Keep dependency-free signup JavaScript in place for the invite form
+- Keep the signup form submit guard on the dependency-free invite request path
 - Keep `make lint`, `make test`, `make build`, and `make check` on the
   SDK-free static baseline
 
@@ -52,6 +53,7 @@ Contribution rules:
 - Preserve local-part validation when changing signup handling.
 - Preserve top-level domain validation when changing signup handling.
 - Preserve dependency-free signup JavaScript when changing the invite form.
+- Preserve the signup form submit guard when changing invite form behavior.
 - Run `make lint`, `make test`, `make build`, and `make check` before pushing
   route, template, or validation changes.
 - Preserve license and provenance for vendored dependencies.
@@ -66,6 +68,8 @@ Datastore-backed apps can hold user data. Do not commit datastore exports,
 session secrets, or production configuration.
 Dependency-free signup JavaScript should avoid remote script dependencies while
 submitting only form-encoded invite requests.
+The signup form submit guard should keep keyboard submissions on the same
+form-encoded request path as click submissions.
 
 ## What We Will Not Merge (For Now)
 

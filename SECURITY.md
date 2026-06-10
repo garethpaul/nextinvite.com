@@ -51,6 +51,8 @@ Helpful reports include:
   labels before datastore persistence.
 - Dependency-free signup JavaScript should keep the invite form independent of
   remote jQuery while preserving XSRF form serialization.
+- The signup form submit guard should keep keyboard form submissions on the
+  same dependency-free, XSRF-aware request path as click submissions.
 - App Engine handlers should keep `secure: always`, and templates should not disable Tornado autoescaping.
 
 ## Service and API Notes
@@ -60,6 +62,8 @@ For web services, APIs, sockets, or scraping workflows, prioritize reports invol
 For this app, reports involving dependency-free signup JavaScript should state
 whether the invite form can be made to depend on remote scripts or inject HTML
 through status messages.
+Reports involving the signup form submit guard should state whether keyboard
+submission bypasses the dependency-free XSRF-aware request handler.
 
 ## Dependency and Supply Chain Security
 

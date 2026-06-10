@@ -55,6 +55,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   before datastore writes.
 - Dependency-free signup JavaScript posts invite requests without remote jQuery
   while preserving XSRF form serialization and text-only status updates.
+- The signup form submit guard sends Enter-key form submissions through the
+  same dependency-free invite request handler as button clicks.
 
 ## Testing and Verification
 
@@ -88,6 +90,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   email suffixes before persistence.
 - Dependency-free signup JavaScript keeps the invite flow working without a
   remote script dependency.
+- The signup form submit guard keeps keyboard submissions on the same XSRF-aware
+  AJAX path as click submissions.
 - App Engine handlers are configured with `secure: always`, and templates should not disable Tornado autoescaping.
 - Review changes touching authentication or token handling; examples from the scan include next/base.py, next/markdown.py, next/tornado/auth.py, next/tornado/database.py, and 6 more.
 - Review changes touching external API calls or credential-adjacent configuration; examples from the scan include next/markdown.py, next/tornado/auth.py, next/tornado/autoreload.py, next/tornado/escape.py, and 6 more.
@@ -106,6 +110,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   gate aliases.
 - See `docs/plans/2026-06-09-dependency-free-signup-javascript.md` for the
   dependency-free signup JavaScript guardrail.
+- See `docs/plans/2026-06-10-signup-form-submit-guard.md` for the signup form
+  submit guardrail.
 - See `SECURITY.md` for vulnerability reporting and safe research guidance.
 - See `VISION.md` for project direction and contribution guardrails.
 

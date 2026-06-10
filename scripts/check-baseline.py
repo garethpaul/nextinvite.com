@@ -18,6 +18,7 @@ LOCAL_PART_PLAN_PATH = "docs/plans/2026-06-09-signup-email-local-part-validation
 TOP_LEVEL_DOMAIN_PLAN_PATH = "docs/plans/2026-06-09-signup-top-level-domain-validation.md"
 MAKE_GATE_PLAN_PATH = "docs/plans/2026-06-09-make-gate-aliases.md"
 SIGNUP_JS_PLAN_PATH = "docs/plans/2026-06-09-dependency-free-signup-javascript.md"
+SIGNUP_FORM_SUBMIT_PLAN_PATH = "docs/plans/2026-06-10-signup-form-submit-guard.md"
 
 
 def read(relative_path):
@@ -113,6 +114,7 @@ def main():
         TOP_LEVEL_DOMAIN_PLAN_PATH,
         MAKE_GATE_PLAN_PATH,
         SIGNUP_JS_PLAN_PATH,
+        SIGNUP_FORM_SUBMIT_PLAN_PATH,
         "scripts/check-baseline.py",
     ]
     for path in required:
@@ -160,6 +162,8 @@ def main():
             "signup form must expose the server email length limit", failures)
     require("request_invite(event)" in template and "if (event)" in template,
             "signup click handler must receive and guard the click event explicitly", failures)
+    require('onsubmit="request_invite(event); return false;"' in template,
+            "signup form submit event must use the dependency-free request handler", failures)
     require("new XMLHttpRequest()" in template and "request.open('POST', '/signup', true)" in template,
             "signup JavaScript must post to the absolute signup route without jQuery", failures)
     require("serialize_form" in template and "encodeURIComponent(field.name)" in template and "encodeURIComponent(field.value)" in template,
@@ -254,6 +258,8 @@ def main():
             "docs must mention top-level domain validation", failures)
     require("dependency-free signup javascript" in docs.lower(),
             "docs must mention dependency-free signup JavaScript", failures)
+    require("signup form submit guard" in docs.lower(),
+            "docs must mention the signup form submit guard", failures)
     changes = read("CHANGES.md")
     require("email dot validation" in changes.lower(),
             "CHANGES must mention email dot validation", failures)
@@ -267,6 +273,8 @@ def main():
             "CHANGES must mention top-level domain validation", failures)
     require("dependency-free signup javascript" in changes.lower(),
             "CHANGES must mention dependency-free signup JavaScript", failures)
+    require("signup form submit guard" in changes.lower(),
+            "CHANGES must mention the signup form submit guard", failures)
     for phrase in ["make lint", "make test", "make build", "make check"]:
         require(phrase in changes, f"CHANGES must mention {phrase}", failures)
 
@@ -297,6 +305,9 @@ def main():
     signup_js_plan = read(SIGNUP_JS_PLAN_PATH) if (ROOT / SIGNUP_JS_PLAN_PATH).is_file() else ""
     require("status: completed" in signup_js_plan and "make check" in signup_js_plan,
             "dependency-free signup JavaScript plan must record status and verification", failures)
+    signup_submit_plan = read(SIGNUP_FORM_SUBMIT_PLAN_PATH) if (ROOT / SIGNUP_FORM_SUBMIT_PLAN_PATH).is_file() else ""
+    require("status: completed" in signup_submit_plan and "make check" in signup_submit_plan,
+            "signup form submit guard plan must record status and verification", failures)
 
     if failures:
         for failure in failures:

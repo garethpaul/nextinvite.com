@@ -1,5 +1,10 @@
 # Changes
 
+## 2026-06-10
+
+- Added a signup form submit guard so Enter-key submissions use the same
+  dependency-free XSRF-aware invite request handler as button clicks.
+
 ## 2026-06-08
 
 - Added email normalization and validation before storing invite signups.
