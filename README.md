@@ -45,6 +45,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   is available.
 - Invite signup emails are normalized, format-checked, and capped at the
   conventional 254-character address length before datastore writes.
+- Idempotent signup keys use a prefixed SHA-256 digest of the normalized email
+  so retries target the same entity without placing plaintext email in the key.
 - Domain label validation rejects labels with leading/trailing hyphens or more
   than 63 characters before datastore writes.
 - Domain label character validation rejects labels with underscores or
@@ -94,6 +96,7 @@ When the required SDK or runtime is unavailable, use static checks and source re
   remote script dependency.
 - The signup form submit guard keeps keyboard submissions on the same XSRF-aware
   AJAX path as click submissions.
+- Preserve idempotent signup key generation when changing datastore persistence.
 - App Engine handlers are configured with `secure: always`, and templates should not disable Tornado autoescaping.
 - Review changes touching authentication or token handling; examples from the scan include next/base.py, next/markdown.py, next/tornado/auth.py, next/tornado/database.py, and 6 more.
 - Review changes touching external API calls or credential-adjacent configuration; examples from the scan include next/markdown.py, next/tornado/auth.py, next/tornado/autoreload.py, next/tornado/escape.py, and 6 more.

@@ -19,6 +19,7 @@ TOP_LEVEL_DOMAIN_PLAN_PATH = "docs/plans/2026-06-09-signup-top-level-domain-vali
 MAKE_GATE_PLAN_PATH = "docs/plans/2026-06-09-make-gate-aliases.md"
 SIGNUP_JS_PLAN_PATH = "docs/plans/2026-06-09-dependency-free-signup-javascript.md"
 SIGNUP_FORM_SUBMIT_PLAN_PATH = "docs/plans/2026-06-10-signup-form-submit-guard.md"
+IDEMPOTENT_SIGNUP_PLAN_PATH = "docs/plans/2026-06-10-idempotent-signup-key.md"
 HOSTED_VALIDATION_PLAN_PATH = "docs/plans/2026-06-10-hosted-static-validation.md"
 
 
@@ -117,6 +118,7 @@ def main():
         MAKE_GATE_PLAN_PATH,
         SIGNUP_JS_PLAN_PATH,
         SIGNUP_FORM_SUBMIT_PLAN_PATH,
+        IDEMPOTENT_SIGNUP_PLAN_PATH,
         HOSTED_VALIDATION_PLAN_PATH,
         "scripts/check-baseline.py",
     ]
@@ -132,6 +134,10 @@ def main():
     server = read("next/server.py")
     require("EMAIL_RE" in server and "normalize_email" in server and "is_valid_email" in server,
             "signup route must validate and normalize email addresses", failures)
+    require("def signup_key_name(email)" in server and
+            'hashlib.sha256(normalized_email.encode("utf-8")).hexdigest()' in server and
+            "SignUp(key_name=signup_key_name(email))" in server,
+            "signup persistence must use a deterministic hashed normalized-email key", failures)
     require("has_valid_email_dots" in server,
             "signup route must reject unsafe email dot placement", failures)
     require("has_valid_domain_labels" in server and "len(label) <= 63" in server and
@@ -200,6 +206,11 @@ def main():
 
     try:
         module = load_server_module()
+        signup_key = module.signup_key_name(" User@Example.COM ")
+        require(signup_key == module.signup_key_name("user@example.com"),
+                "signup keys must be stable across email normalization variants", failures)
+        require(signup_key.startswith("signup-") and len(signup_key) == 71 and "user@example.com" not in signup_key,
+                "signup keys must use a prefixed SHA-256 digest without plaintext email", failures)
         require(module.normalize_email(" USER@Example.COM ") == "user@example.com",
                 "normalize_email must trim and lowercase", failures)
         require(module.is_valid_email("user@example.com"), "valid email must be accepted", failures)
@@ -311,6 +322,9 @@ def main():
     signup_submit_plan = read(SIGNUP_FORM_SUBMIT_PLAN_PATH) if (ROOT / SIGNUP_FORM_SUBMIT_PLAN_PATH).is_file() else ""
     require("status: completed" in signup_submit_plan and "make check" in signup_submit_plan,
             "signup form submit guard plan must record status and verification", failures)
+    idempotent_signup_plan = read(IDEMPOTENT_SIGNUP_PLAN_PATH) if (ROOT / IDEMPOTENT_SIGNUP_PLAN_PATH).is_file() else ""
+    require("status: completed" in idempotent_signup_plan and "make check" in idempotent_signup_plan,
+            "idempotent signup key plan must record status and verification", failures)
     hosted_plan = read(HOSTED_VALIDATION_PLAN_PATH) if (ROOT / HOSTED_VALIDATION_PLAN_PATH).is_file() else ""
     workflow = read(".github/workflows/check.yml")
     require("status: completed" in hosted_plan and "make check" in hosted_plan,

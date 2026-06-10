@@ -23,6 +23,7 @@ Priority:
 - Keep signup templates autoescaped and App Engine handlers on secure transport
 - Maintain security policy for the app
 - Keep signup email handling validated and covered by static contracts
+- Keep idempotent signup keys derived from normalized email hashes
 - Keep signup email length limits aligned between the template and route handler
 - Keep email dot validation in place before datastore persistence
 - Keep domain label validation in place before datastore persistence
@@ -55,6 +56,7 @@ Contribution rules:
 - Preserve top-level domain validation when changing signup handling.
 - Preserve dependency-free signup JavaScript when changing the invite form.
 - Preserve the signup form submit guard when changing invite form behavior.
+- Preserve idempotent signup key generation when changing datastore writes.
 - Run `make lint`, `make test`, `make build`, and `make check` before pushing
   route, template, or validation changes.
 - Preserve license and provenance for vendored dependencies.
@@ -71,6 +73,8 @@ Dependency-free signup JavaScript should avoid remote script dependencies while
 submitting only form-encoded invite requests.
 The signup form submit guard should keep keyboard submissions on the same
 form-encoded request path as click submissions.
+Idempotent signup keys should keep retries on one datastore entity without
+placing plaintext addresses in datastore identifiers.
 
 ## What We Will Not Merge (For Now)
 

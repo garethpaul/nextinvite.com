@@ -42,6 +42,9 @@ Helpful reports include:
   Engine deployment, datastore access, or external service calls.
 - Signup emails are private user data. Do not commit datastore exports, request logs, local App Engine data, `.env` files, or production configuration.
 - Signup email inputs should stay normalized, format-checked, and capped at the 254-character address boundary before datastore persistence.
+- Idempotent signup keys should hash normalized addresses with SHA-256 so retry
+  deduplication does not expose plaintext email in datastore identifiers; this
+  is deterministic hashing, not encryption.
 - Email dot validation should reject leading, trailing, and consecutive dot cases before datastore persistence.
 - Domain label validation should reject leading/trailing hyphen labels and
   labels over 63 characters before datastore persistence.

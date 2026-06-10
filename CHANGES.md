@@ -2,6 +2,8 @@
 
 ## 2026-06-10
 
+- Added idempotent signup keys using a prefixed SHA-256 digest of normalized
+  email addresses to avoid duplicate retry entities and plaintext datastore keys.
 - Added pinned, read-only Python 3.12 hosted validation for the dependency-free
   signup and App Engine configuration baseline.
 - Added a signup form submit guard so Enter-key submissions use the same
