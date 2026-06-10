@@ -33,6 +33,7 @@ Priority:
 - Keep the signup form submit guard on the dependency-free invite request path
 - Keep `make lint`, `make test`, `make build`, and `make check` on the
   SDK-free static baseline
+- Keep that dependency-free baseline pinned and read-only in hosted Linux CI
 
 Next priorities:
 

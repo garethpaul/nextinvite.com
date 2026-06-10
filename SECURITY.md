@@ -38,6 +38,8 @@ Helpful reports include:
 - Run `make lint`, `make test`, `make build`, and `make check` after changing
   signup routes, templates, App Engine config, vendored dependency boundaries,
   or security docs.
+- The pinned Linux workflow runs only dependency-free local checks without App
+  Engine deployment, datastore access, or external service calls.
 - Signup emails are private user data. Do not commit datastore exports, request logs, local App Engine data, `.env` files, or production configuration.
 - Signup email inputs should stay normalized, format-checked, and capped at the 254-character address boundary before datastore persistence.
 - Email dot validation should reject leading, trailing, and consecutive dot cases before datastore persistence.

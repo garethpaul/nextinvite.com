@@ -19,6 +19,7 @@ TOP_LEVEL_DOMAIN_PLAN_PATH = "docs/plans/2026-06-09-signup-top-level-domain-vali
 MAKE_GATE_PLAN_PATH = "docs/plans/2026-06-09-make-gate-aliases.md"
 SIGNUP_JS_PLAN_PATH = "docs/plans/2026-06-09-dependency-free-signup-javascript.md"
 SIGNUP_FORM_SUBMIT_PLAN_PATH = "docs/plans/2026-06-10-signup-form-submit-guard.md"
+HOSTED_VALIDATION_PLAN_PATH = "docs/plans/2026-06-10-hosted-static-validation.md"
 
 
 def read(relative_path):
@@ -96,6 +97,7 @@ def main():
     failures = []
     required = [
         ".gitignore",
+        ".github/workflows/check.yml",
         "CHANGES.md",
         "Makefile",
         "README.md",
@@ -115,6 +117,7 @@ def main():
         MAKE_GATE_PLAN_PATH,
         SIGNUP_JS_PLAN_PATH,
         SIGNUP_FORM_SUBMIT_PLAN_PATH,
+        HOSTED_VALIDATION_PLAN_PATH,
         "scripts/check-baseline.py",
     ]
     for path in required:
@@ -308,6 +311,21 @@ def main():
     signup_submit_plan = read(SIGNUP_FORM_SUBMIT_PLAN_PATH) if (ROOT / SIGNUP_FORM_SUBMIT_PLAN_PATH).is_file() else ""
     require("status: completed" in signup_submit_plan and "make check" in signup_submit_plan,
             "signup form submit guard plan must record status and verification", failures)
+    hosted_plan = read(HOSTED_VALIDATION_PLAN_PATH) if (ROOT / HOSTED_VALIDATION_PLAN_PATH).is_file() else ""
+    workflow = read(".github/workflows/check.yml")
+    require("status: completed" in hosted_plan and "make check" in hosted_plan,
+            "hosted static validation plan must record status and verification", failures)
+    for expected in [
+        "permissions:\n  contents: read",
+        "cancel-in-progress: true",
+        "runs-on: ubuntu-24.04",
+        "timeout-minutes: 10",
+        "actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10",
+        "actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405",
+        'python-version: "3.12"',
+        "run: make check",
+    ]:
+        require(expected in workflow, f"Check workflow must keep {expected}", failures)
 
     if failures:
         for failure in failures:

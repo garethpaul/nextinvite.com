@@ -2,6 +2,8 @@
 
 ## 2026-06-10
 
+- Added pinned, read-only Python 3.12 hosted validation for the dependency-free
+  signup and App Engine configuration baseline.
 - Added a signup form submit guard so Enter-key submissions use the same
   dependency-free XSRF-aware invite request handler as button clicks.
 

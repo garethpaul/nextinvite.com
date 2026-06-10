@@ -65,6 +65,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 - `make build`
 - `make check`
 - `python3 scripts/check-baseline.py`
+- Pinned `ubuntu-24.04` GitHub Actions runs the same dependency-free baseline on
+  Python 3.12 without App Engine deployment, datastore access, or external calls.
 
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.
 
