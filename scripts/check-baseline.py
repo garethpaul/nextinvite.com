@@ -23,6 +23,7 @@ SIGNUP_FORM_SUBMIT_PLAN_PATH = "docs/plans/2026-06-10-signup-form-submit-guard.m
 IDEMPOTENT_SIGNUP_PLAN_PATH = "docs/plans/2026-06-10-idempotent-signup-key.md"
 HOSTED_VALIDATION_PLAN_PATH = "docs/plans/2026-06-10-hosted-static-validation.md"
 SIGNUP_BODY_LIMIT_PLAN_PATH = "docs/plans/2026-06-12-signup-body-limit.md"
+CHECKOUT_CREDENTIAL_PLAN_PATH = "docs/plans/2026-06-12-checkout-credential-boundary.md"
 
 
 def read(relative_path):
@@ -131,6 +132,7 @@ def main():
         IDEMPOTENT_SIGNUP_PLAN_PATH,
         HOSTED_VALIDATION_PLAN_PATH,
         SIGNUP_BODY_LIMIT_PLAN_PATH,
+        CHECKOUT_CREDENTIAL_PLAN_PATH,
         "scripts/check-baseline.py",
     ]
     for path in required:
@@ -379,6 +381,10 @@ def main():
                 f"signup body verification must record {evidence}", failures)
     hosted_plan = read(HOSTED_VALIDATION_PLAN_PATH) if (ROOT / HOSTED_VALIDATION_PLAN_PATH).is_file() else ""
     workflow = read(".github/workflows/check.yml")
+    workflow_files = [
+        *sorted((ROOT / ".github/workflows").glob("*.yml")),
+        *sorted((ROOT / ".github/workflows").glob("*.yaml")),
+    ]
     require("status: completed" in hosted_plan and "make check" in hosted_plan,
             "hosted static validation plan must record status and verification", failures)
     for expected in [
@@ -392,6 +398,47 @@ def main():
         "run: make check",
     ]:
         require(expected in workflow, f"Check workflow must keep {expected}", failures)
+
+    checkout_action = (
+        "actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10"
+    )
+    checkout_blocks = re.findall(
+        rf"(?m)^(?P<indent> *)- +uses: +{re.escape(checkout_action)}[^\n]*\n"
+        rf"(?P=indent)  with:\n"
+        rf"(?P=indent)    persist-credentials: +false *$",
+        workflow,
+    )
+    checkout_actions = re.findall(
+        r"(?m)^\s*-\s+uses:\s+actions/checkout@",
+        workflow,
+    )
+    require(
+        len(workflow_files) == 1
+        and workflow.count("permissions:") == 1
+        and workflow.count("contents: read") == 1
+        and not re.search(r"(?m)^\s*[A-Za-z-]+:\s*write\s*$", workflow)
+        and len(checkout_actions) == 1
+        and workflow.count(checkout_action) == 1
+        and len(checkout_blocks) == 1
+        and workflow.count("persist-credentials: false") == 1
+        and "persist-credentials: true" not in workflow,
+        "Check workflow must keep one read-only permission block and one "
+        "pinned, credential-free checkout",
+        failures,
+    )
+
+    checkout_plan = read(CHECKOUT_CREDENTIAL_PLAN_PATH) if (ROOT / CHECKOUT_CREDENTIAL_PLAN_PATH).is_file() else ""
+    checkout_status = re.findall(r"(?mi)^status:\s*(.+?)\s*$", checkout_plan)
+    checkout_work = markdown_section(checkout_plan, "Work Completed")
+    checkout_verification = markdown_section(checkout_plan, "Verification Completed")
+    require(
+        checkout_status == ["completed"]
+        and bool(checkout_work)
+        and "make check" in checkout_verification,
+        "checkout credential plan must record one completed status, completed "
+        "work, and make check verification",
+        failures,
+    )
 
     if failures:
         for failure in failures:
