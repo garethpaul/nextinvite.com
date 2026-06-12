@@ -3,6 +3,7 @@
 # Copyright 2013 NextInvite
 #
 import functools
+import hashlib
 import markdown
 import os
 import os.path
@@ -25,6 +26,12 @@ MAX_LOCAL_PART_LENGTH = 64
 
 def normalize_email(email):
     return email.strip().lower()
+
+
+def signup_key_name(email):
+    normalized_email = normalize_email(email)
+    digest = hashlib.sha256(normalized_email.encode("utf-8")).hexdigest()
+    return "signup-" + digest
 
 
 def has_valid_email_dots(email):
@@ -113,7 +120,7 @@ class SignUpHandler(base.BaseHandler):
 			self.write("invalid email")
 			return
 
-		s = SignUp()
+		s = SignUp(key_name=signup_key_name(email))
 		s.email = email
 		s.put()
 		self.write("ok")

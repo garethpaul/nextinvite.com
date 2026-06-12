@@ -20,6 +20,8 @@ MAKE_GATE_PLAN_PATH = "docs/plans/2026-06-09-make-gate-aliases.md"
 SIGNUP_JS_PLAN_PATH = "docs/plans/2026-06-09-dependency-free-signup-javascript.md"
 SIGNUP_FORM_SUBMIT_PLAN_PATH = "docs/plans/2026-06-10-signup-form-submit-guard.md"
 CI_PLAN_PATH = "docs/plans/2026-06-10-ci-baseline.md"
+IDEMPOTENT_SIGNUP_PLAN_PATH = "docs/plans/2026-06-10-idempotent-signup-key.md"
+HOSTED_VALIDATION_PLAN_PATH = "docs/plans/2026-06-10-hosted-static-validation.md"
 
 
 def read(relative_path):
@@ -97,6 +99,7 @@ def main():
     failures = []
     required = [
         ".gitignore",
+        ".github/CODEOWNERS",
         ".github/workflows/check.yml",
         "CHANGES.md",
         "Makefile",
@@ -118,6 +121,8 @@ def main():
         SIGNUP_JS_PLAN_PATH,
         SIGNUP_FORM_SUBMIT_PLAN_PATH,
         CI_PLAN_PATH,
+        IDEMPOTENT_SIGNUP_PLAN_PATH,
+        HOSTED_VALIDATION_PLAN_PATH,
         "scripts/check-baseline.py",
     ]
     for path in required:
@@ -132,6 +137,10 @@ def main():
     server = read("next/server.py")
     require("EMAIL_RE" in server and "normalize_email" in server and "is_valid_email" in server,
             "signup route must validate and normalize email addresses", failures)
+    require("def signup_key_name(email)" in server and
+            'hashlib.sha256(normalized_email.encode("utf-8")).hexdigest()' in server and
+            "SignUp(key_name=signup_key_name(email))" in server,
+            "signup persistence must use a deterministic hashed normalized-email key", failures)
     require("has_valid_email_dots" in server,
             "signup route must reject unsafe email dot placement", failures)
     require("has_valid_domain_labels" in server and "len(label) <= 63" in server and
@@ -194,15 +203,17 @@ def main():
         "lint test build: static-check",
     ]:
         require(expected in makefile, f"Makefile must expose standard gate alias: {expected}", failures)
-    for expected in ["actions/checkout@v4", "actions/setup-python@v5", "make check"]:
-        require(expected in workflow, f"GitHub Actions workflow must include {expected}", failures)
-
     gitignore = read(".gitignore")
     for expected in ["__pycache__/", "*.pyc", ".env", "appengine-generated/", "local_db.bin", "bulkloader-*"]:
         require(expected in gitignore, f".gitignore must include {expected}", failures)
 
     try:
         module = load_server_module()
+        signup_key = module.signup_key_name(" User@Example.COM ")
+        require(signup_key == module.signup_key_name("user@example.com"),
+                "signup keys must be stable across email normalization variants", failures)
+        require(signup_key.startswith("signup-") and len(signup_key) == 71 and "user@example.com" not in signup_key,
+                "signup keys must use a prefixed SHA-256 digest without plaintext email", failures)
         require(module.normalize_email(" USER@Example.COM ") == "user@example.com",
                 "normalize_email must trim and lowercase", failures)
         require(module.is_valid_email("user@example.com"), "valid email must be accepted", failures)
@@ -317,6 +328,29 @@ def main():
     ci_plan = read(CI_PLAN_PATH) if (ROOT / CI_PLAN_PATH).is_file() else ""
     require("status: completed" in ci_plan and "scripts/check-baseline.py" in ci_plan,
             "CI baseline plan must record status and active checker", failures)
+    idempotent_signup_plan = read(IDEMPOTENT_SIGNUP_PLAN_PATH) if (ROOT / IDEMPOTENT_SIGNUP_PLAN_PATH).is_file() else ""
+    require("status: completed" in idempotent_signup_plan and "make check" in idempotent_signup_plan,
+            "idempotent signup key plan must record status and verification", failures)
+    hosted_plan = read(HOSTED_VALIDATION_PLAN_PATH) if (ROOT / HOSTED_VALIDATION_PLAN_PATH).is_file() else ""
+    workflow = read(".github/workflows/check.yml")
+    codeowners = read(".github/CODEOWNERS")
+    require("status: completed" in hosted_plan and "make check" in hosted_plan,
+            "hosted static validation plan must record status and verification", failures)
+    for expected in [
+        "permissions:\n  contents: read",
+        "cancel-in-progress: true",
+        "runs-on: ubuntu-24.04",
+        "timeout-minutes: 10",
+        "actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10",
+        "persist-credentials: false",
+        "actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405",
+        'python-version: "3.12"',
+        "run: make check",
+    ]:
+        require(expected in workflow, f"Check workflow must keep {expected}", failures)
+    workflow_files = sorted(str(path.relative_to(ROOT)) for path in (ROOT / ".github/workflows").rglob("*") if path.is_file())
+    require(workflow_files == [".github/workflows/check.yml"], "check.yml must be the repository's only hosted workflow", failures)
+    require(codeowners.strip() == "* @garethpaul", "CODEOWNERS must assign the repository to @garethpaul", failures)
 
     if failures:
         for failure in failures:
