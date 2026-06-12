@@ -19,6 +19,7 @@ TOP_LEVEL_DOMAIN_PLAN_PATH = "docs/plans/2026-06-09-signup-top-level-domain-vali
 MAKE_GATE_PLAN_PATH = "docs/plans/2026-06-09-make-gate-aliases.md"
 SIGNUP_JS_PLAN_PATH = "docs/plans/2026-06-09-dependency-free-signup-javascript.md"
 SIGNUP_FORM_SUBMIT_PLAN_PATH = "docs/plans/2026-06-10-signup-form-submit-guard.md"
+CI_PLAN_PATH = "docs/plans/2026-06-10-ci-baseline.md"
 
 
 def read(relative_path):
@@ -96,6 +97,7 @@ def main():
     failures = []
     required = [
         ".gitignore",
+        ".github/workflows/check.yml",
         "CHANGES.md",
         "Makefile",
         "README.md",
@@ -115,6 +117,7 @@ def main():
         MAKE_GATE_PLAN_PATH,
         SIGNUP_JS_PLAN_PATH,
         SIGNUP_FORM_SUBMIT_PLAN_PATH,
+        CI_PLAN_PATH,
         "scripts/check-baseline.py",
     ]
     for path in required:
@@ -183,6 +186,7 @@ def main():
             "all App Engine handlers must require secure transport", failures)
 
     makefile = read("Makefile")
+    workflow = read(".github/workflows/check.yml")
     for expected in [
         ".PHONY: build check lint static-check test verify",
         "check: verify",
@@ -190,6 +194,8 @@ def main():
         "lint test build: static-check",
     ]:
         require(expected in makefile, f"Makefile must expose standard gate alias: {expected}", failures)
+    for expected in ["actions/checkout@v4", "actions/setup-python@v5", "make check"]:
+        require(expected in workflow, f"GitHub Actions workflow must include {expected}", failures)
 
     gitignore = read(".gitignore")
     for expected in ["__pycache__/", "*.pyc", ".env", "appengine-generated/", "local_db.bin", "bulkloader-*"]:
@@ -244,8 +250,8 @@ def main():
         failures.append(f"server helper contracts failed: {error}")
 
     docs = read("README.md") + "\n" + read("VISION.md") + "\n" + read("SECURITY.md")
-    for phrase in ["make lint", "make test", "make build", "make check", "datastore", "private user data"]:
-        require(phrase in docs.lower(), f"docs must mention {phrase}", failures)
+    for phrase in ["make lint", "make test", "make build", "make check", "GitHub Actions", "datastore", "private user data"]:
+        require(phrase.lower() in docs.lower(), f"docs must mention {phrase}", failures)
     require("email dot validation" in docs.lower(),
             "docs must mention email dot validation", failures)
     require("domain label validation" in docs.lower(),
@@ -308,6 +314,9 @@ def main():
     signup_submit_plan = read(SIGNUP_FORM_SUBMIT_PLAN_PATH) if (ROOT / SIGNUP_FORM_SUBMIT_PLAN_PATH).is_file() else ""
     require("status: completed" in signup_submit_plan and "make check" in signup_submit_plan,
             "signup form submit guard plan must record status and verification", failures)
+    ci_plan = read(CI_PLAN_PATH) if (ROOT / CI_PLAN_PATH).is_file() else ""
+    require("status: completed" in ci_plan and "scripts/check-baseline.py" in ci_plan,
+            "CI baseline plan must record status and active checker", failures)
 
     if failures:
         for failure in failures:

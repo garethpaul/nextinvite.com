@@ -11,6 +11,7 @@ This README is based on the checked-in source, manifests, scripts, and repositor
 
 ## Repository Contents
 
+- `.github/workflows/check.yml` - CI baseline that runs the static Make gate
 - `next` - source or example code
 - `SECURITY.md` - security reporting and disclosure guidance
 - `VISION.md` - project direction and maintenance guardrails
@@ -65,6 +66,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 - `make build`
 - `make check`
 - `python3 scripts/check-baseline.py`
+- GitHub Actions runs the SDK-free `make check` gate through
+  `.github/workflows/check.yml` on pushes and pull requests.
 
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.
 
@@ -112,6 +115,7 @@ When the required SDK or runtime is unavailable, use static checks and source re
   dependency-free signup JavaScript guardrail.
 - See `docs/plans/2026-06-10-signup-form-submit-guard.md` for the signup form
   submit guardrail.
+- See `docs/plans/2026-06-10-ci-baseline.md` for the lightweight CI baseline.
 - See `SECURITY.md` for vulnerability reporting and safe research guidance.
 - See `VISION.md` for project direction and contribution guardrails.
 

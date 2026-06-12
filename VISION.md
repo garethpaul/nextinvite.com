@@ -33,6 +33,7 @@ Priority:
 - Keep the signup form submit guard on the dependency-free invite request path
 - Keep `make lint`, `make test`, `make build`, and `make check` on the
   SDK-free static baseline
+- Keep GitHub Actions running the SDK-free `make check` baseline
 
 Next priorities:
 
@@ -56,6 +57,7 @@ Contribution rules:
 - Preserve the signup form submit guard when changing invite form behavior.
 - Run `make lint`, `make test`, `make build`, and `make check` before pushing
   route, template, or validation changes.
+  GitHub Actions should run the same SDK-free baseline for pushed changes.
 - Preserve license and provenance for vendored dependencies.
 
 ## Security And Privacy

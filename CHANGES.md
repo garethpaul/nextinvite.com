@@ -2,6 +2,7 @@
 
 ## 2026-06-10
 
+- Added GitHub Actions CI that runs the SDK-free `make check` baseline.
 - Added a signup form submit guard so Enter-key submissions use the same
   dependency-free XSRF-aware invite request handler as button clicks.
 
