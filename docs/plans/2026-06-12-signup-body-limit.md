@@ -54,7 +54,11 @@ Completed locally on 2026-06-12:
   access before the guard, were each rejected by the static contract
 - `git diff --check`
 
-Hosted push and pull-request checks will be recorded after the branch is pushed.
+Completed on GitHub Actions for implementation head
+`7f603f87d06aed9b64770aaf9337fb38eaad6f7b`:
+
+- push run `27397751878`: success
+- pull-request run `27397752986`: success
 
 ## Boundaries
 
