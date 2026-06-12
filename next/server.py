@@ -22,6 +22,7 @@ LOCAL_PART_RE = re.compile(r"^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+$")
 DOMAIN_LABEL_RE = re.compile(r"^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$")
 MAX_EMAIL_LENGTH = 254
 MAX_LOCAL_PART_LENGTH = 64
+MAX_SIGNUP_BODY_BYTES = 4096
 
 
 def normalize_email(email):
@@ -114,6 +115,12 @@ class HomeHandler(base.BaseHandler):
 		
 class SignUpHandler(base.BaseHandler):
 	def post(self):
+		request_body = self.request.body or ""
+		if len(request_body) > MAX_SIGNUP_BODY_BYTES:
+			self.set_status(413)
+			self.write("request too large")
+			return
+
 		email = normalize_email(self.get_argument('email', ''))
 		if not is_valid_email(email):
 			self.set_status(400)

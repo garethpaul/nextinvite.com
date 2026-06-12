@@ -1,6 +1,6 @@
 # Signup Body Limit
 
-status: planned
+status: completed
 
 ## Context
 
@@ -43,14 +43,18 @@ buffering.
 
 ## Verification
 
+Completed locally on 2026-06-12:
+
 - `python3 -m py_compile scripts/check-baseline.py`
 - `make lint`
 - `make test`
 - `make build`
 - `make check`
-- hostile mutations removing the limit, 413 response, or pre-argument ordering
+- hostile mutations changing the limit or 413 response, or moving argument
+  access before the guard, were each rejected by the static contract
 - `git diff --check`
-- hosted push and pull-request checks
+
+Hosted push and pull-request checks will be recorded after the branch is pushed.
 
 ## Boundaries
 

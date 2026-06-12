@@ -21,6 +21,7 @@ SIGNUP_JS_PLAN_PATH = "docs/plans/2026-06-09-dependency-free-signup-javascript.m
 SIGNUP_FORM_SUBMIT_PLAN_PATH = "docs/plans/2026-06-10-signup-form-submit-guard.md"
 IDEMPOTENT_SIGNUP_PLAN_PATH = "docs/plans/2026-06-10-idempotent-signup-key.md"
 HOSTED_VALIDATION_PLAN_PATH = "docs/plans/2026-06-10-hosted-static-validation.md"
+SIGNUP_BODY_LIMIT_PLAN_PATH = "docs/plans/2026-06-12-signup-body-limit.md"
 
 
 def read(relative_path):
@@ -120,6 +121,7 @@ def main():
         SIGNUP_FORM_SUBMIT_PLAN_PATH,
         IDEMPOTENT_SIGNUP_PLAN_PATH,
         HOSTED_VALIDATION_PLAN_PATH,
+        SIGNUP_BODY_LIMIT_PLAN_PATH,
         "scripts/check-baseline.py",
     ]
     for path in required:
@@ -138,6 +140,15 @@ def main():
             'hashlib.sha256(normalized_email.encode("utf-8")).hexdigest()' in server and
             "SignUp(key_name=signup_key_name(email))" in server,
             "signup persistence must use a deterministic hashed normalized-email key", failures)
+    signup_post = server.split("class SignUpHandler", 1)[1].split("settings =", 1)[0]
+    body_guard_index = signup_post.find("if len(request_body) > MAX_SIGNUP_BODY_BYTES")
+    argument_index = signup_post.find("self.get_argument('email', '')")
+    require("\nMAX_SIGNUP_BODY_BYTES = 4096\n" in server and
+            "request_body = self.request.body or \"\"" in signup_post and
+            0 <= body_guard_index < argument_index and
+            "self.set_status(413)" in signup_post and
+            'self.write("request too large")' in signup_post,
+            "signup body must be bounded with a generic 413 before argument access", failures)
     require("has_valid_email_dots" in server,
             "signup route must reject unsafe email dot placement", failures)
     require("has_valid_domain_labels" in server and "len(label) <= 63" in server and
@@ -274,6 +285,8 @@ def main():
             "docs must mention dependency-free signup JavaScript", failures)
     require("signup form submit guard" in docs.lower(),
             "docs must mention the signup form submit guard", failures)
+    require("signup body limit" in docs.lower(),
+            "docs must mention the signup body limit", failures)
     changes = read("CHANGES.md")
     require("email dot validation" in changes.lower(),
             "CHANGES must mention email dot validation", failures)
@@ -289,6 +302,8 @@ def main():
             "CHANGES must mention dependency-free signup JavaScript", failures)
     require("signup form submit guard" in changes.lower(),
             "CHANGES must mention the signup form submit guard", failures)
+    require("signup body limit" in changes.lower(),
+            "CHANGES must mention the signup body limit", failures)
     for phrase in ["make lint", "make test", "make build", "make check"]:
         require(phrase in changes, f"CHANGES must mention {phrase}", failures)
 
@@ -325,6 +340,9 @@ def main():
     idempotent_signup_plan = read(IDEMPOTENT_SIGNUP_PLAN_PATH) if (ROOT / IDEMPOTENT_SIGNUP_PLAN_PATH).is_file() else ""
     require("status: completed" in idempotent_signup_plan and "make check" in idempotent_signup_plan,
             "idempotent signup key plan must record status and verification", failures)
+    signup_body_limit_plan = read(SIGNUP_BODY_LIMIT_PLAN_PATH) if (ROOT / SIGNUP_BODY_LIMIT_PLAN_PATH).is_file() else ""
+    require("status: completed" in signup_body_limit_plan and "hostile mutations" in signup_body_limit_plan,
+            "signup body limit plan must record completed verification", failures)
     hosted_plan = read(HOSTED_VALIDATION_PLAN_PATH) if (ROOT / HOSTED_VALIDATION_PLAN_PATH).is_file() else ""
     workflow = read(".github/workflows/check.yml")
     require("status: completed" in hosted_plan and "make check" in hosted_plan,
