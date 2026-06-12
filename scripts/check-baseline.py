@@ -4,6 +4,7 @@
 from pathlib import Path
 import ast
 import importlib.util
+import re
 import sys
 import types
 
@@ -26,6 +27,14 @@ SIGNUP_BODY_LIMIT_PLAN_PATH = "docs/plans/2026-06-12-signup-body-limit.md"
 
 def read(relative_path):
     return (ROOT / relative_path).read_text(encoding="utf-8", errors="replace")
+
+
+def markdown_section(text, heading):
+    match = re.search(
+        rf"(?ms)^## {re.escape(heading)}\s*$\n(.*?)(?=^## |\Z)",
+        text,
+    )
+    return match.group(1).strip() if match else ""
 
 
 def require(condition, message, failures):
@@ -341,8 +350,33 @@ def main():
     require("status: completed" in idempotent_signup_plan and "make check" in idempotent_signup_plan,
             "idempotent signup key plan must record status and verification", failures)
     signup_body_limit_plan = read(SIGNUP_BODY_LIMIT_PLAN_PATH) if (ROOT / SIGNUP_BODY_LIMIT_PLAN_PATH).is_file() else ""
-    require("status: completed" in signup_body_limit_plan and "hostile mutations" in signup_body_limit_plan,
+    signup_body_status = re.findall(r"(?mi)^status:\s*(.+?)\s*$", signup_body_limit_plan)
+    signup_body_work = markdown_section(signup_body_limit_plan, "Work Completed")
+    signup_body_verification = markdown_section(signup_body_limit_plan, "Verification Completed")
+    require(signup_body_status == ["completed"] and bool(signup_body_work),
+            "signup body limit plan must record one completed status and completed work", failures)
+    require(bool(signup_body_verification) and not re.search(
+                r"(?i)\b(?:pending|todo|tbd|not run)\b", signup_body_verification),
             "signup body limit plan must record completed verification", failures)
+    for evidence in [
+        "python3 -m py_compile scripts/check-baseline.py",
+        "make lint",
+        "make test",
+        "make build",
+        "make check",
+        "git diff --check",
+        "27397766640",
+        "27397768643",
+        "38ec086796059511cc29df438e6c23e010a456cd",
+        "MAX_SIGNUP_BODY_BYTES = 4096",
+        'request_body = self.request.body or ""',
+        "if len(request_body) > MAX_SIGNUP_BODY_BYTES",
+        "self.set_status(413)",
+        'self.write("request too large")',
+        "self.get_argument('email', '')",
+    ]:
+        require(evidence in signup_body_verification,
+                f"signup body verification must record {evidence}", failures)
     hosted_plan = read(HOSTED_VALIDATION_PLAN_PATH) if (ROOT / HOSTED_VALIDATION_PLAN_PATH).is_file() else ""
     workflow = read(".github/workflows/check.yml")
     require("status: completed" in hosted_plan and "make check" in hosted_plan,
