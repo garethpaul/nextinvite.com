@@ -62,6 +62,28 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 - The signup body limit rejects form bodies larger than 4 KiB with a generic
   `413` before the handler reads the email argument.
 
+## Datastore And Local Development
+
+- `SignUp` is the only application datastore entity in the maintained source.
+  It stores normalized email in the `email` `db.TextProperty` and records an
+  automatic creation timestamp in the `added` `db.DateTimeProperty`.
+- Each entity uses a deterministic `signup-<sha256>` key name derived from the
+  normalized email. This makes retries idempotent; it is not encryption, and
+  known email addresses may still be guessable. The normalized email remains
+  stored as plaintext private data in the entity.
+- The app targets the retired Python 2 App Engine standard environment and uses
+  bundled `google.appengine` APIs plus vendored Tornado modules. A current
+  `gcloud` Python runtime is not claimed to be compatible.
+- The historical local command is `dev_appserver.py next/app.yaml`. It requires
+  an era-compatible classic App Engine SDK and was not executed as part of the
+  current dependency-free validation.
+- The historical deployment flow used `appcfg.py update next/`. Do not run it
+  without an owned App Engine project, reviewed application/version settings,
+  explicit credentials, and a separate deployment plan; deployment is not
+  verified by this repository's CI.
+- Keep local datastore files, datastore exports, logs, credentials, and real
+  signup email data outside version control.
+
 ## Testing and Verification
 
 - `make lint`

@@ -1,6 +1,6 @@
 ---
 title: Document datastore and local development boundaries
-status: planned
+status: completed
 date: 2026-06-13
 ---
 
@@ -66,3 +66,15 @@ Files: `scripts/check-baseline.py`
   every command must be labeled unverified and tied to an era-compatible SDK.
 - Hash-derived keys can be mistaken for encrypted email storage; documentation
   must state that the entity still stores normalized email in plaintext.
+
+## Verification Result
+
+- `make lint`, `make test`, `make build`, and `make check` passed the complete
+  dependency-free baseline.
+- External-working-directory checker execution, Python compilation, App Engine
+  and workflow YAML parsing, and `git diff --check` passed.
+- Six hostile mutations rejected weakened entity-schema, plaintext-storage,
+  historical-SDK, deployment-ownership, local-data exclusion, and
+  idempotency-only hash claims.
+- The intended documentation and checker diff passed credential-pattern and
+  generated-artifact scans.

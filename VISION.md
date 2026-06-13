@@ -37,11 +37,17 @@ Priority:
   SDK-free static baseline
 - Keep that dependency-free baseline pinned, read-only, and credential-free in
   hosted Linux CI
+- Keep the `SignUp` entity contract explicit: normalized plaintext email,
+  automatic creation timestamp, and deterministic idempotent key name
+- Keep hash-derived datastore keys documented as idempotency, not encryption
+- Keep classic App Engine local development and deployment commands labeled
+  historical and unverified without an era-compatible SDK
+- Keep local datastore files, exports, credentials, and production user data
+  outside version control
 
 Next priorities:
 
 - Add root-level setup and deployment notes
-- Document datastore entities and local development requirements
 - Modernize App Engine/Tornado dependencies in a dedicated pass
 - Expand route/template verification with fixture data
 
