@@ -1,6 +1,6 @@
 # Location-Independent NextInvite Verification
 
-status: in progress
+status: completed
 
 ## Context
 
@@ -40,3 +40,25 @@ mutation verification after it completes.
 - Do not access credentials, datastore data, external services, deployment, or
   the classic App Engine runtime.
 - Preserve the existing stacked PR chain and exact-head evidence.
+
+## Work Completed
+
+- Rooted every dependency-free Make alias at the checkout containing the loaded
+  Makefile while preserving the target graph and `PYTHON` override.
+- Added exact Makefile, README invocation, completed status, and verification
+  evidence contracts to `scripts/check-baseline.py`.
+- Documented absolute Makefile invocation without changing application,
+  datastore, or workflow behavior.
+
+## Verification Completed
+
+- Root and external-directory `lint`, `test`, `build`, `verify`, and `check`
+  gates passed through the checkout's absolute Makefile path.
+- `python3 -m py_compile scripts/check-baseline.py` and `git diff --check`
+  passed.
+- Six isolated hostile mutations covering root derivation, checker resolution,
+  alias delegation, the Python override, completed plan evidence, and README
+  invocation guidance were rejected by the intended contracts.
+- Intended-path, secret-pattern, conflict-marker, generated-artifact,
+  application, template, JavaScript, CSS, App Engine, dependency, test,
+  workflow, datastore, and credential-boundary audits passed.

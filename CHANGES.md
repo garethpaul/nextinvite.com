@@ -2,6 +2,8 @@
 
 ## 2026-06-13
 
+- Made every dependency-free Make alias resolve the static checker from the
+  checkout when the Makefile is invoked by absolute path.
 - Documented the `SignUp` datastore entity, plaintext email storage,
   deterministic idempotent key, and automatic creation timestamp.
 - Recorded the retired Python 2 App Engine SDK boundary, historical local and
