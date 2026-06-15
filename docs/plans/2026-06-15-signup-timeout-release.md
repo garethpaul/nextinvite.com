@@ -1,6 +1,6 @@
 # Release Signup Ownership After Request Timeout
 
-Status: In Progress
+Status: Completed
 
 ## Summary
 
@@ -55,4 +55,13 @@ submission is then ignored until the page is reloaded.
 
 ## Verification Completed
 
-Pending implementation and validation.
+- All four Make gates passed from the repository, and `make check` passed from
+  an external directory through the absolute Makefile path.
+- Seven isolated hostile mutations were rejected for the timeout constant,
+  assignment, callback, ownership release, release/message ordering,
+  documentation, and completed-plan status.
+- Checker compilation, exact-diff, whitespace, generated-artifact,
+  conflict-marker, intended-path, binary, large-file, and changed-line
+  credential-pattern audits passed.
+- No App Engine SDK, datastore, browser, live request, or private signup data
+  was used.

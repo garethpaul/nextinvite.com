@@ -63,6 +63,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   until the current response completes.
 - The signup setup failure release restores retry when browser XHR setup or
   synchronous dispatch throws before a response exists.
+- The signup request timeout release restores retry after 10 seconds when a
+  browser request never completes.
 - The signup body limit rejects form bodies larger than 4 KiB with a generic
   `413` before the handler reads the email argument.
 
@@ -130,6 +132,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   AJAX path as click submissions.
 - The signup in-flight guard should keep one browser request pending at a time
   and release failed attempts for retry.
+- The signup request timeout release should bound a stalled browser request to
+  10 seconds and release the page-local guard before generic retry feedback.
 - The signup body limit bounds application-level form handling; upstream App
   Engine or Tornado layers may still buffer request transport data.
 - Preserve idempotent signup key generation when changing datastore persistence.

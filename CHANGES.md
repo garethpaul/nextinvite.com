@@ -6,6 +6,8 @@
   preserving retry after completed failures.
 - Added signup setup failure release so synchronous XHR setup or dispatch
   errors restore retry with generic text-only feedback.
+- Added signup request timeout release so a stalled browser POST restores retry
+  after a finite 10-second bound.
 
 ## 2026-06-13
 
