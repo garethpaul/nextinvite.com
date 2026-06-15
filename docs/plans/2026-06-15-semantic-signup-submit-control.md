@@ -1,6 +1,6 @@
 # Semantic Signup Submit Control
 
-Status: planned
+Status: completed
 
 ## Problem
 
@@ -60,3 +60,25 @@ do not share the same browser validation boundary.
   and label.
 - Existing asynchronous ownership, feedback, security, and backend contracts
   remain unchanged.
+
+## Work Completed
+
+- Replaced the direct-action anchor with a semantic submit button while
+  retaining the existing classes, label, and form submit handler.
+- Removed the click-specific request entry point so native constraints precede
+  both pointer and keyboard submissions.
+- Added minimal inherited-font and pointer-cursor styling plus mutation-sensitive
+  portable contracts and synchronized guidance.
+
+## Verification Completed
+
+- All four Make gates passed from the repository and `make check` passed from
+  an external directory.
+- Seven isolated hostile mutations were rejected for anchor restoration,
+  missing submit type, direct click-handler restoration, lost form routing,
+  styling drift, missing guidance, and stale plan status.
+- The exact eight-file implementation diff passed dependency, generated-artifact,
+  credential, conflict, binary, large-file, mode, whitespace, and intended-path
+  audits.
+- App Engine, datastore, and live signup requests were not exercised locally;
+  browser automation was unavailable because `agent-browser` is not installed.

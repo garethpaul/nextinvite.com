@@ -45,6 +45,7 @@ SIGNUP_IN_FLIGHT_PLAN_PATH = "docs/plans/2026-06-15-signup-in-flight-guard.md"
 SIGNUP_SETUP_FAILURE_PLAN_PATH = "docs/plans/2026-06-15-signup-setup-failure-release.md"
 SIGNUP_TIMEOUT_PLAN_PATH = "docs/plans/2026-06-15-signup-timeout-release.md"
 RETRYABLE_SIGNUP_FEEDBACK_PLAN_PATH = "docs/plans/2026-06-15-retryable-signup-failure-feedback.md"
+SEMANTIC_SIGNUP_SUBMIT_PLAN_PATH = "docs/plans/2026-06-15-semantic-signup-submit-control.md"
 
 
 def read(relative_path):
@@ -217,8 +218,13 @@ def main():
             "signup form must use required email input", failures)
     require("maxlength='254'" in template,
             "signup form must expose the server email length limit", failures)
-    require("request_invite(event)" in template and "if (event)" in template,
-            "signup click handler must receive and guard the click event explicitly", failures)
+    submit_control = template.split("<td>", 2)[-1].split("</td>", 1)[0]
+    require("<button type='submit' class='BigButton BlueButton'>" in submit_control and
+            "<strong>Request Invitation</strong>" in submit_control and
+            "onclick=" not in submit_control and
+            "href=" not in submit_control and
+            "<a " not in submit_control,
+            "signup action must use one semantic submit button without a direct click handler", failures)
     require('onsubmit="request_invite(event); return false;"' in template,
             "signup form submit event must use the dependency-free request handler", failures)
     require("new XMLHttpRequest()" in template and "request.open('POST', '/signup', true)" in template,
@@ -281,6 +287,10 @@ def main():
             "retryable failures must preserve the form while success remains terminal", failures)
 
     style = read("next/static/style.css")
+    big_button_style = style.split(".BigButton {", 1)[1].split("}", 1)[0]
+    require("font-family: inherit;" in big_button_style and
+            "cursor: pointer;" in big_button_style,
+            "semantic signup button must retain inherited typography and pointer affordance", failures)
     require("http://s3.amazonaws.com" not in style, "background asset URL must use HTTPS", failures)
 
     app_yaml = read("next/app.yaml")
@@ -388,6 +398,8 @@ def main():
             "docs must mention the signup in-flight guard", failures)
     require("signup request timeout release" in docs.lower(),
             "docs must mention the signup request timeout release", failures)
+    require("semantic signup submit control" in docs.lower(),
+            "docs must mention the semantic signup submit control", failures)
     guidance_sources = {
         "README.md": readme_source,
         "SECURITY.md": security_source,
@@ -452,6 +464,8 @@ def main():
             "CHANGES must mention the signup in-flight guard", failures)
     require("signup request timeout release" in changes.lower(),
             "CHANGES must mention the signup request timeout release", failures)
+    require("semantic signup submit control" in changes.lower(),
+            "CHANGES must mention the semantic signup submit control", failures)
     for phrase in ["make lint", "make test", "make build", "make check"]:
         require(phrase in changes, f"CHANGES must mention {phrase}", failures)
 
@@ -525,6 +539,16 @@ def main():
             "external directory" in retryable_feedback_verification and
             not re.search(r"(?i)\b(?:pending|todo|tbd|not run)\b", retryable_feedback_verification),
             "retryable signup feedback plan must record completed verification", failures)
+    semantic_submit_plan = read(SEMANTIC_SIGNUP_SUBMIT_PLAN_PATH)
+    semantic_submit_verification = markdown_section(
+        semantic_submit_plan, "Verification Completed"
+    )
+    require("status: completed" in semantic_submit_plan.lower() and
+            "All four Make gates passed" in semantic_submit_verification and
+            "Seven isolated hostile mutations were rejected" in semantic_submit_verification and
+            "external directory" in semantic_submit_verification and
+            not re.search(r"(?i)\b(?:pending|todo|tbd|not run)\b", semantic_submit_verification),
+            "semantic signup submit control plan must record completed verification", failures)
     idempotent_signup_plan = read(IDEMPOTENT_SIGNUP_PLAN_PATH) if (ROOT / IDEMPOTENT_SIGNUP_PLAN_PATH).is_file() else ""
     require("status: completed" in idempotent_signup_plan and "make check" in idempotent_signup_plan,
             "idempotent signup key plan must record status and verification", failures)

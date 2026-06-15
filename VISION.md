@@ -32,6 +32,7 @@ Priority:
 - Keep top-level domain validation in place before datastore persistence
 - Keep dependency-free signup JavaScript in place for the invite form
 - Keep the signup form submit guard on the dependency-free invite request path
+- Keep the semantic signup submit control behind native form validation
 - Keep the signup in-flight guard around asynchronous form submissions
 - Keep the signup setup failure release around synchronous XHR construction and send
 - Keep retryable signup feedback separate from terminal success replacement
@@ -67,6 +68,7 @@ Contribution rules:
 - Preserve top-level domain validation when changing signup handling.
 - Preserve dependency-free signup JavaScript when changing the invite form.
 - Preserve the signup form submit guard when changing invite form behavior.
+- Preserve the semantic signup submit control when changing invite actions.
 - Preserve the signup body limit when changing signup request handling.
 - Preserve idempotent signup key generation when changing datastore writes.
 - Run `make lint`, `make test`, `make build`, and `make check` before pushing
