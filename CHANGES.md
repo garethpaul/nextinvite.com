@@ -4,6 +4,8 @@
 
 - Added a signup in-flight guard to prevent overlapping browser POSTs while
   preserving retry after completed failures.
+- Added signup setup failure release so synchronous XHR setup or dispatch
+  errors restore retry with generic text-only feedback.
 
 ## 2026-06-13
 

@@ -1,6 +1,6 @@
 # Release Signup Ownership On Setup Failure
 
-Status: Planned
+Status: Completed
 
 ## Summary
 
@@ -45,3 +45,16 @@ ignores every later click or keyboard submission until it is reloaded.
   available in this environment, so runtime behavior remains unexecuted.
 - The change must remain stacked on PR #7; neither pull request may be merged
   or closed without explicit owner authorization.
+
+## Verification Completed
+
+- All four Make gates passed from the repository, and `make check` passed from
+  an external directory through the absolute Makefile path.
+- Six isolated hostile mutations were rejected for the setup try/catch,
+  ownership release, release/message ordering, generic feedback,
+  documentation, and completed-plan status.
+- Checker compilation, exact-diff, whitespace, generated-artifact,
+  conflict-marker, intended-path, binary, large-file, and changed-line
+  credential-pattern audits passed.
+- No App Engine SDK, datastore, browser, live request, or private signup data
+  was used.

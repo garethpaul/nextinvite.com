@@ -63,24 +63,29 @@ function request_invite(event){
 	        return;
 	    }
 	    invite_request_in_flight = true;
-	    var request = new XMLHttpRequest();
-	    request.open('POST', '/signup', true);
-	    request.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
-	    request.onreadystatechange = function() {
-	        if (request.readyState !== 4) {
-	            return;
-	        }
-	        if (request.status >= 200 && request.status < 300) {
-	            set_display('inviteform', 'none');
-	            set_display('signup-text', 'none');
-	            set_display('Welcome', 'none');
-	            set_text('signup', "Thank You - we will review your application and you should hear shortly whether you've made the list");
-	            return;
-	        }
+	    try {
+	        var request = new XMLHttpRequest();
+	        request.open('POST', '/signup', true);
+	        request.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
+	        request.onreadystatechange = function() {
+	            if (request.readyState !== 4) {
+	                return;
+	            }
+	            if (request.status >= 200 && request.status < 300) {
+	                set_display('inviteform', 'none');
+	                set_display('signup-text', 'none');
+	                set_display('Welcome', 'none');
+	                set_text('signup', "Thank You - we will review your application and you should hear shortly whether you've made the list");
+	                return;
+	            }
+	            invite_request_in_flight = false;
+	            set_text('signup', 'Please enter a valid email address.');
+	        };
+	        request.send(serialize_form(document.getElementById('inviteform')));
+	    } catch (error) {
 	        invite_request_in_flight = false;
 	        set_text('signup', 'Please enter a valid email address.');
-	    };
-	    request.send(serialize_form(document.getElementById('inviteform')));
+	    }
 }
 </script>
 

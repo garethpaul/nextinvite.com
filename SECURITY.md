@@ -66,6 +66,8 @@ Helpful reports include:
   same dependency-free, XSRF-aware request path as click submissions.
 - The signup in-flight guard should prevent overlapping browser POSTs while
   preserving retry after a completed failure.
+- The signup setup failure release should restore retry without exposing
+  exception details when XHR setup or synchronous dispatch fails.
 - App Engine handlers should keep `secure: always`, and templates should not disable Tornado autoescaping.
 - Classic `dev_appserver.py` and `appcfg.py` workflows require an
   era-compatible SDK. Keep local datastore files and exports out of git, and do

@@ -61,6 +61,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   same dependency-free invite request handler as button clicks.
 - The signup in-flight guard rejects overlapping click or keyboard requests
   until the current response completes.
+- The signup setup failure release restores retry when browser XHR setup or
+  synchronous dispatch throws before a response exists.
 - The signup body limit rejects form bodies larger than 4 KiB with a generic
   `413` before the handler reads the email argument.
 
