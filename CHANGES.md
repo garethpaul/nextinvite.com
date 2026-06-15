@@ -1,5 +1,10 @@
 # Changes
 
+## 2026-06-15
+
+- Added a signup in-flight guard to prevent overlapping browser POSTs while
+  preserving retry after completed failures.
+
 ## 2026-06-13
 
 - Made every dependency-free Make alias resolve the static checker from the

@@ -1,6 +1,6 @@
 # Signup In-Flight Guard
 
-status: in progress
+status: completed
 
 ## Context
 
@@ -43,8 +43,22 @@ the browser still performs redundant requests and response races.
 
 ## Work Completed
 
-- Pending implementation.
+- Added one page-local signup request ownership flag.
+- Rejected repeated click or keyboard submissions before XHR construction while
+  a request is pending.
+- Set ownership before request setup and released it only after a completed
+  non-success response, preserving terminal successful replacement.
+- Added ordering-sensitive static contracts and maintenance guidance.
 
 ## Verification Completed
 
-- Pending validation.
+- All four Make gates passed from the checkout, and the rooted canonical gate
+  passed from an external directory through the absolute Makefile path.
+- Six isolated hostile mutations were rejected: missing overlap guard,
+  ownership after XHR setup, release before completion, failure remaining
+  locked, missing guidance, and stale plan status.
+- Checker compilation and `git diff --check` passed. Exact intended-path,
+  generated-artifact, secret-pattern, conflict-marker, binary, and large-file
+  audits found no issues.
+- No App Engine SDK, datastore, browser, live request, or private signup data was
+  used; runtime behavior is not claimed.

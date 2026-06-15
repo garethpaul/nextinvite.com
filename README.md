@@ -59,6 +59,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   while preserving XSRF form serialization and text-only status updates.
 - The signup form submit guard sends Enter-key form submissions through the
   same dependency-free invite request handler as button clicks.
+- The signup in-flight guard rejects overlapping click or keyboard requests
+  until the current response completes.
 - The signup body limit rejects form bodies larger than 4 KiB with a generic
   `413` before the handler reads the email argument.
 
@@ -124,6 +126,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   remote script dependency.
 - The signup form submit guard keeps keyboard submissions on the same XSRF-aware
   AJAX path as click submissions.
+- The signup in-flight guard should keep one browser request pending at a time
+  and release failed attempts for retry.
 - The signup body limit bounds application-level form handling; upstream App
   Engine or Tornado layers may still buffer request transport data.
 - Preserve idempotent signup key generation when changing datastore persistence.

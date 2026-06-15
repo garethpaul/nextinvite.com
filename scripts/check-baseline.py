@@ -41,6 +41,7 @@ SIGNUP_BODY_LIMIT_PLAN_PATH = "docs/plans/2026-06-12-signup-body-limit.md"
 CHECKOUT_CREDENTIAL_PLAN_PATH = "docs/plans/2026-06-12-checkout-credential-boundary.md"
 DATASTORE_LOCAL_DEVELOPMENT_PLAN_PATH = "docs/plans/2026-06-13-datastore-local-development.md"
 LOCATION_INDEPENDENT_MAKE_PLAN_PATH = "docs/plans/2026-06-13-location-independent-make.md"
+SIGNUP_IN_FLIGHT_PLAN_PATH = "docs/plans/2026-06-15-signup-in-flight-guard.md"
 
 
 def read(relative_path):
@@ -151,6 +152,7 @@ def main():
         SIGNUP_BODY_LIMIT_PLAN_PATH,
         CHECKOUT_CREDENTIAL_PLAN_PATH,
         LOCATION_INDEPENDENT_MAKE_PLAN_PATH,
+        SIGNUP_IN_FLIGHT_PLAN_PATH,
         "scripts/check-baseline.py",
     ]
     for path in required:
@@ -221,6 +223,18 @@ def main():
             "signup JavaScript must submit form-encoded data", failures)
     require("textContent" in template and ".html(" not in template,
             "signup JavaScript must handle responses without HTML injection", failures)
+    request_invite = template.split("function request_invite(event)", 1)[1].split("</script>", 1)[0]
+    in_flight_guard_index = request_invite.find("if (invite_request_in_flight)")
+    in_flight_start_index = request_invite.find("invite_request_in_flight = true")
+    request_create_index = request_invite.find("new XMLHttpRequest()")
+    completion_index = request_invite.find("if (request.readyState !== 4)")
+    success_index = request_invite.find("if (request.status >= 200 && request.status < 300)")
+    failure_release_index = request_invite.find("invite_request_in_flight = false")
+    require("var invite_request_in_flight = false;" in template and
+            0 <= in_flight_guard_index < in_flight_start_index < request_create_index,
+            "signup JavaScript must reject overlapping requests before XHR setup", failures)
+    require(0 <= completion_index < success_index < failure_release_index,
+            "signup JavaScript must release request ownership only after completed failures", failures)
 
     style = read("next/static/style.css")
     require("http://s3.amazonaws.com" not in style, "background asset URL must use HTTPS", failures)
@@ -323,6 +337,8 @@ def main():
             "docs must mention the signup form submit guard", failures)
     require("signup body limit" in docs.lower(),
             "docs must mention the signup body limit", failures)
+    require("signup in-flight guard" in docs.lower(),
+            "docs must mention the signup in-flight guard", failures)
     readme = " ".join(read("README.md").split())
     for phrase in [
         "`SignUp` is the only application datastore entity",
@@ -374,6 +390,8 @@ def main():
             "CHANGES must mention the signup form submit guard", failures)
     require("signup body limit" in changes.lower(),
             "CHANGES must mention the signup body limit", failures)
+    require("signup in-flight guard" in changes.lower(),
+            "CHANGES must mention the signup in-flight guard", failures)
     for phrase in ["make lint", "make test", "make build", "make check"]:
         require(phrase in changes, f"CHANGES must mention {phrase}", failures)
 
@@ -407,6 +425,16 @@ def main():
     signup_submit_plan = read(SIGNUP_FORM_SUBMIT_PLAN_PATH) if (ROOT / SIGNUP_FORM_SUBMIT_PLAN_PATH).is_file() else ""
     require("status: completed" in signup_submit_plan and "make check" in signup_submit_plan,
             "signup form submit guard plan must record status and verification", failures)
+    signup_in_flight_plan = read(SIGNUP_IN_FLIGHT_PLAN_PATH)
+    signup_in_flight_verification = markdown_section(
+        signup_in_flight_plan, "Verification Completed"
+    )
+    require("status: completed" in signup_in_flight_plan and
+            "All four Make gates passed" in signup_in_flight_verification and
+            "Six isolated hostile mutations were rejected" in signup_in_flight_verification and
+            "external directory" in signup_in_flight_verification and
+            not re.search(r"(?i)\b(?:pending|todo|tbd|not run)\b", signup_in_flight_verification),
+            "signup in-flight guard plan must record completed verification", failures)
     idempotent_signup_plan = read(IDEMPOTENT_SIGNUP_PLAN_PATH) if (ROOT / IDEMPOTENT_SIGNUP_PLAN_PATH).is_file() else ""
     require("status: completed" in idempotent_signup_plan and "make check" in idempotent_signup_plan,
             "idempotent signup key plan must record status and verification", failures)
