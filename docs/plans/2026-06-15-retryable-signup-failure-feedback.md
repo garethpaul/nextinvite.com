@@ -1,6 +1,6 @@
 # Preserve the Signup Form After Retryable Failures
 
-Status: Planned
+Status: Completed
 
 ## Problem
 
@@ -76,3 +76,27 @@ Document the retryability boundary and record exact completed verification.
 - The generic message intentionally does not distinguish validation, transport,
   timeout, or setup failures.
 - This change must remain stacked on PR #9 and retain base-first ordering.
+
+## Work Completed
+
+- Added a dedicated text-only alert region inside the signup container.
+- Centralized retryable failure rendering and routed completed-request, timeout,
+  and synchronous setup failures to the alert without replacing the form.
+- Cleared stale feedback only after a new request acquires page-local ownership.
+- Preserved terminal success replacement and the existing backend boundaries.
+- Extended portable contracts and maintainer guidance.
+
+## Verification Completed
+
+- Focused template contracts, checker compilation with external bytecode output,
+  and `git diff --check` passed.
+- All four Make gates passed from the repository, and `make check` passed from
+  an external directory through the absolute Makefile path.
+- Nine isolated hostile mutations were rejected: missing feedback region,
+  missing accessibility semantics, missing retry-start clearing, each of the
+  three failure routes targeting the parent container, success targeting the
+  feedback region, missing guidance, and stale plan status.
+- Exact intended-path, generated-artifact, credential-pattern, conflict-marker,
+  binary, and large-file audits passed.
+- No App Engine SDK, datastore, browser, live request, or private signup data
+  was used.
