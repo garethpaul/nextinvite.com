@@ -76,6 +76,8 @@ Helpful reports include:
   avoid exposing response bodies, exception details, or submitted addresses.
 - The signup network failure release should handle transport errors and browser
   aborts through the same generic text-only retry path.
+- Signup request ownership should make duplicate or delayed terminal XHR events
+  inert after a newer submission owns the global signup state.
 - App Engine handlers should keep `secure: always`, and templates should not disable Tornado autoescaping.
 - Classic `dev_appserver.py` and `appcfg.py` workflows require an
   era-compatible SDK. Keep local datastore files and exports out of git, and do

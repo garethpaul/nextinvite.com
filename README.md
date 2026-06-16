@@ -71,6 +71,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   timeout, and setup failures do not remove the form needed for another attempt.
 - The signup network failure release restores retry after transport errors or
   browser-aborted requests without exposing diagnostics.
+- Signup request ownership binds terminal success and retry release to the
+  active XHR so delayed events cannot unlock a newer submission.
 - The signup body limit rejects form bodies larger than 4 KiB with a generic
   `413` before the handler reads the email argument.
 

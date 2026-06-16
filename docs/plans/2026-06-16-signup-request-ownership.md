@@ -1,6 +1,6 @@
 # Signup Request Ownership
 
-Status: planned
+Status: completed
 
 ## Problem
 
@@ -29,14 +29,14 @@ lock because terminal handlers are not bound to the request they belong to.
 - `CHANGES.md`
 - `docs/plans/2026-06-16-signup-request-ownership.md`
 
-## Verification Planned
+## Verification Completed
 
-- Run the focused checker and all four Make gates from the repository root and
-  an external directory.
-- Reject isolated hostile mutations for ownership declaration, assignment,
-  success identity, success cleanup, failure identity, handler binding, setup
-  failure binding, and completed evidence.
-- Run exact diff, artifact, credential, conflict-marker, binary, large-file,
-  and whitespace audits.
-- Record unavailable retired App Engine and browser tooling without claiming
-  end-to-end execution.
+- The focused checker passed. All four Make gates passed from the repository
+  root and an external directory.
+- Eight isolated hostile mutations were rejected for ownership declaration,
+  assignment, success identity, success cleanup, failure identity, handler
+  binding, setup failure binding, and completed evidence.
+- Exact diff, artifact, credential, conflict-marker, binary, large-file, and
+  whitespace audits passed.
+- Retired App Engine and browser tooling are unavailable in this environment,
+  so end-to-end execution could not be performed.

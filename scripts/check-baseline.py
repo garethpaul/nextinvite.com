@@ -47,6 +47,7 @@ SIGNUP_TIMEOUT_PLAN_PATH = "docs/plans/2026-06-15-signup-timeout-release.md"
 RETRYABLE_SIGNUP_FEEDBACK_PLAN_PATH = "docs/plans/2026-06-15-retryable-signup-failure-feedback.md"
 SEMANTIC_SIGNUP_SUBMIT_PLAN_PATH = "docs/plans/2026-06-15-semantic-signup-submit-control.md"
 SIGNUP_NETWORK_FAILURE_PLAN_PATH = "docs/plans/2026-06-16-signup-network-failure-release.md"
+SIGNUP_REQUEST_OWNERSHIP_PLAN_PATH = "docs/plans/2026-06-16-signup-request-ownership.md"
 
 
 def read(relative_path):
@@ -162,6 +163,7 @@ def main():
         SIGNUP_TIMEOUT_PLAN_PATH,
         RETRYABLE_SIGNUP_FEEDBACK_PLAN_PATH,
         SIGNUP_NETWORK_FAILURE_PLAN_PATH,
+        SIGNUP_REQUEST_OWNERSHIP_PLAN_PATH,
         "scripts/check-baseline.py",
     ]
     for path in required:
@@ -249,48 +251,60 @@ def main():
     require("set_text('signup-feedback', 'Please enter a valid email address.')" in failure_renderer and
             "set_text('signup'," not in failure_renderer,
             "signup failure renderer must update only the dedicated feedback region", failures)
-    retryable_failure_helper = template.split("function release_signup_for_retry()", 1)[1].split("var invite_request_in_flight", 1)[0]
-    require("invite_request_in_flight = false" in retryable_failure_helper and
-            "show_signup_failure()" in retryable_failure_helper and
-            retryable_failure_helper.find("invite_request_in_flight = false") < retryable_failure_helper.find("show_signup_failure()"),
-            "retryable signup failure helper must release ownership before generic feedback", failures)
+    retryable_failure_helper = template.split("function release_signup_for_retry(request)", 1)[1].split("var invite_request_in_flight", 1)[0]
+    helper_identity_index = retryable_failure_helper.find("if (active_invite_request !== request)")
+    helper_ownership_clear_index = retryable_failure_helper.find("active_invite_request = null")
+    helper_in_flight_clear_index = retryable_failure_helper.find("invite_request_in_flight = false")
+    helper_feedback_index = retryable_failure_helper.find("show_signup_failure()")
+    require(0 <= helper_identity_index < helper_ownership_clear_index < helper_in_flight_clear_index < helper_feedback_index,
+            "retryable signup failure helper must verify and clear exact request ownership before generic feedback", failures)
     request_invite = template.split("function request_invite(event)", 1)[1].split("</script>", 1)[0]
     in_flight_guard_index = request_invite.find("if (invite_request_in_flight)")
     in_flight_start_index = request_invite.find("invite_request_in_flight = true")
     feedback_clear_index = request_invite.find("set_text('signup-feedback', '')")
+    request_null_index = request_invite.find("var request = null")
+    initial_owner_index = request_invite.find("active_invite_request = request", request_null_index)
     request_create_index = request_invite.find("new XMLHttpRequest()")
+    request_owner_index = request_invite.find("active_invite_request = request", request_create_index)
     request_open_index = request_invite.find("request.open('POST', '/signup', true)")
     setup_try_index = request_invite.find("try {")
     timeout_assignment_index = request_invite.find("request.timeout = signup_request_timeout_ms")
     completion_index = request_invite.find("if (request.readyState !== 4)")
+    callback_identity_index = request_invite.find("if (active_invite_request !== request)", completion_index)
     success_index = request_invite.find("if (request.status >= 200 && request.status < 300)")
+    success_owner_clear_index = request_invite.find("active_invite_request = null", success_index)
+    success_in_flight_clear_index = request_invite.find("invite_request_in_flight = false", success_index)
+    success_render_index = request_invite.find("set_display('inviteform', 'none')", success_index)
     success_return_index = request_invite.find("return;", success_index)
-    failure_release_index = request_invite.find("release_signup_for_retry()", success_return_index)
-    timeout_handler_index = request_invite.find("request.ontimeout = release_signup_for_retry")
-    network_error_handler_index = request_invite.find("request.onerror = release_signup_for_retry")
-    abort_handler_index = request_invite.find("request.onabort = release_signup_for_retry")
+    failure_release_index = request_invite.find("release_signup_for_retry(request)", success_return_index)
+    shared_handler_index = request_invite.find("function release_current_signup_for_retry()")
+    shared_handler_release_index = request_invite.find("release_signup_for_retry(request)", shared_handler_index)
+    timeout_handler_index = request_invite.find("request.ontimeout = release_current_signup_for_retry")
+    network_error_handler_index = request_invite.find("request.onerror = release_current_signup_for_retry")
+    abort_handler_index = request_invite.find("request.onabort = release_current_signup_for_retry")
     request_send_index = request_invite.find("request.send(")
     setup_catch_index = request_invite.find("} catch (error)")
-    setup_release_index = request_invite.find("release_signup_for_retry()", setup_catch_index)
+    setup_release_index = request_invite.find("release_signup_for_retry(request)", setup_catch_index)
     require("var invite_request_in_flight = false;" in template and
+            "var active_invite_request = null;" in template and
             0 <= in_flight_guard_index < in_flight_start_index < request_create_index,
             "signup JavaScript must reject overlapping requests before XHR setup", failures)
-    require(0 <= in_flight_start_index < feedback_clear_index < setup_try_index,
+    require(0 <= in_flight_start_index < feedback_clear_index < request_null_index < initial_owner_index < setup_try_index < request_create_index < request_owner_index < request_open_index,
             "accepted signup retries must clear stale feedback after acquiring ownership", failures)
-    require(0 <= completion_index < success_index < success_return_index < failure_release_index < timeout_handler_index,
-            "completed signup failures must delegate only after terminal success returns", failures)
+    require(0 <= completion_index < callback_identity_index < success_index < success_owner_clear_index < success_in_flight_clear_index < success_render_index < success_return_index < failure_release_index,
+            "completed signup callbacks must verify ownership and clear it before terminal success or failure", failures)
     require(0 <= in_flight_start_index < setup_try_index < request_create_index and
             0 <= request_send_index < setup_catch_index < setup_release_index,
             "signup JavaScript must delegate synchronous setup failures for retry", failures)
     require("var signup_request_timeout_ms = 10000;" in template and
             0 <= request_open_index < timeout_assignment_index < timeout_handler_index < request_send_index,
             "signup JavaScript must install the finite request timeout before dispatch", failures)
-    require(0 <= timeout_handler_index < network_error_handler_index < abort_handler_index < request_send_index,
+    require(0 <= failure_release_index < shared_handler_index < shared_handler_release_index < timeout_handler_index < network_error_handler_index < abort_handler_index < request_send_index,
             "signup JavaScript must install timeout, network-error, and abort release handlers before dispatch", failures)
-    require(request_invite.count("release_signup_for_retry()") == 2 and
-            "invite_request_in_flight = false" not in request_invite and
+    require(request_invite.count("release_signup_for_retry(request)") == 3 and
+            request_invite.count("invite_request_in_flight = false") == 1 and
             "show_signup_failure()" not in request_invite,
-            "all retryable request failures must share the release helper", failures)
+            "all retryable request failures must remain request-bound through the shared release helper", failures)
     require("set_text('signup-feedback', 'Please enter a valid email address.')" not in request_invite and
             "set_text('signup', 'Please enter a valid email address.')" not in request_invite and
             "set_text('signup', \"Thank You - we will review your application" in request_invite,
@@ -421,6 +435,8 @@ def main():
                 f"{relative_path} must document retryable signup feedback", failures)
         require("signup network failure release" in guidance_source.lower(),
                 f"{relative_path} must document signup network failure release", failures)
+        require("signup request ownership" in guidance_source.lower(),
+                f"{relative_path} must document signup request ownership", failures)
     readme = " ".join(read("README.md").split())
     for phrase in [
         "`SignUp` is the only application datastore entity",
@@ -571,6 +587,16 @@ def main():
             "external directory" in network_failure_verification and
             not re.search(r"(?i)\b(?:pending|todo|tbd|not run)\b", network_failure_verification),
             "signup network failure release plan must record completed verification", failures)
+    request_ownership_plan = read(SIGNUP_REQUEST_OWNERSHIP_PLAN_PATH)
+    request_ownership_verification = markdown_section(
+        request_ownership_plan, "Verification Completed"
+    )
+    require("status: completed" in request_ownership_plan.lower() and
+            "All four Make gates passed" in request_ownership_verification and
+            "Eight isolated hostile mutations were rejected" in request_ownership_verification and
+            "external directory" in request_ownership_verification and
+            not re.search(r"(?i)\b(?:pending|todo|tbd|not run)\b", request_ownership_verification),
+            "signup request ownership plan must record completed verification", failures)
     idempotent_signup_plan = read(IDEMPOTENT_SIGNUP_PLAN_PATH) if (ROOT / IDEMPOTENT_SIGNUP_PLAN_PATH).is_file() else ""
     require("status: completed" in idempotent_signup_plan and "make check" in idempotent_signup_plan,
             "idempotent signup key plan must record status and verification", failures)

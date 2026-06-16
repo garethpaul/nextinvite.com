@@ -58,12 +58,17 @@ function show_signup_failure() {
 	    set_text('signup-feedback', 'Please enter a valid email address.');
 }
 
-function release_signup_for_retry() {
+function release_signup_for_retry(request) {
+	    if (active_invite_request !== request) {
+	        return;
+	    }
+	    active_invite_request = null;
 	    invite_request_in_flight = false;
 	    show_signup_failure();
 }
 
 var invite_request_in_flight = false;
+var active_invite_request = null;
 var signup_request_timeout_ms = 10000;
 
 function request_invite(event){
@@ -75,8 +80,11 @@ function request_invite(event){
 	    }
 	    invite_request_in_flight = true;
 	    set_text('signup-feedback', '');
+	    var request = null;
+	    active_invite_request = request;
 	    try {
-	        var request = new XMLHttpRequest();
+	        request = new XMLHttpRequest();
+	        active_invite_request = request;
 	        request.open('POST', '/signup', true);
 	        request.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
 	        request.timeout = signup_request_timeout_ms;
@@ -84,21 +92,29 @@ function request_invite(event){
 	            if (request.readyState !== 4) {
 	                return;
 	            }
+	            if (active_invite_request !== request) {
+	                return;
+	            }
 	            if (request.status >= 200 && request.status < 300) {
+	                active_invite_request = null;
+	                invite_request_in_flight = false;
 	                set_display('inviteform', 'none');
 	                set_display('signup-text', 'none');
 	                set_display('Welcome', 'none');
 	                set_text('signup', "Thank You - we will review your application and you should hear shortly whether you've made the list");
 	                return;
 	            }
-	            release_signup_for_retry();
+	            release_signup_for_retry(request);
 	        };
-	        request.ontimeout = release_signup_for_retry;
-	        request.onerror = release_signup_for_retry;
-	        request.onabort = release_signup_for_retry;
+	        function release_current_signup_for_retry() {
+	            release_signup_for_retry(request);
+	        }
+	        request.ontimeout = release_current_signup_for_retry;
+	        request.onerror = release_current_signup_for_retry;
+	        request.onabort = release_current_signup_for_retry;
 	        request.send(serialize_form(document.getElementById('inviteform')));
 	    } catch (error) {
-	        release_signup_for_retry();
+	        release_signup_for_retry(request);
 	    }
 }
 </script>
