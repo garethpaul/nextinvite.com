@@ -1,6 +1,6 @@
 ---
 title: Signup Network Failure Release
-status: planned
+status: completed
 date: 2026-06-16
 ---
 
@@ -61,3 +61,23 @@ timeouts, and setup exceptions, but does not handle `XMLHttpRequest.onerror` or
 - Every retryable terminal XHR failure releases the submission lock and shows
   the existing retry feedback.
 - Successful signup behavior remains unchanged.
+
+## Work Completed
+
+- Added one success-excluded retry helper that releases page-local ownership
+  before rendering the existing generic text-only feedback.
+- Routed completed HTTP failures, timeouts, transport errors, browser aborts,
+  and synchronous setup/send exceptions through that helper.
+- Extended the baseline checker and maintained guidance for the new terminal
+  failure contract without changing successful signup behavior.
+
+## Verification Completed
+
+- All four Make gates passed from the repository root and an external directory.
+- Ten isolated hostile mutations were rejected across helper ordering, HTTP
+  failure, timeout, network-error, abort, setup exception, success ordering,
+  README guidance, and changelog evidence.
+- The focused baseline checker passed before and after the completed-plan
+  contract was added.
+- Exact diff, generated artifact, credential, conflict marker, binary, large
+  file, and whitespace audits passed for the intended files.

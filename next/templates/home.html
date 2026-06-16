@@ -58,6 +58,11 @@ function show_signup_failure() {
 	    set_text('signup-feedback', 'Please enter a valid email address.');
 }
 
+function release_signup_for_retry() {
+	    invite_request_in_flight = false;
+	    show_signup_failure();
+}
+
 var invite_request_in_flight = false;
 var signup_request_timeout_ms = 10000;
 
@@ -86,17 +91,14 @@ function request_invite(event){
 	                set_text('signup', "Thank You - we will review your application and you should hear shortly whether you've made the list");
 	                return;
 	            }
-	            invite_request_in_flight = false;
-	            show_signup_failure();
+	            release_signup_for_retry();
 	        };
-	        request.ontimeout = function() {
-	            invite_request_in_flight = false;
-	            show_signup_failure();
-	        };
+	        request.ontimeout = release_signup_for_retry;
+	        request.onerror = release_signup_for_retry;
+	        request.onabort = release_signup_for_retry;
 	        request.send(serialize_form(document.getElementById('inviteform')));
 	    } catch (error) {
-	        invite_request_in_flight = false;
-	        show_signup_failure();
+	        release_signup_for_retry();
 	    }
 }
 </script>

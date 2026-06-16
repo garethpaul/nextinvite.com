@@ -46,6 +46,7 @@ SIGNUP_SETUP_FAILURE_PLAN_PATH = "docs/plans/2026-06-15-signup-setup-failure-rel
 SIGNUP_TIMEOUT_PLAN_PATH = "docs/plans/2026-06-15-signup-timeout-release.md"
 RETRYABLE_SIGNUP_FEEDBACK_PLAN_PATH = "docs/plans/2026-06-15-retryable-signup-failure-feedback.md"
 SEMANTIC_SIGNUP_SUBMIT_PLAN_PATH = "docs/plans/2026-06-15-semantic-signup-submit-control.md"
+SIGNUP_NETWORK_FAILURE_PLAN_PATH = "docs/plans/2026-06-16-signup-network-failure-release.md"
 
 
 def read(relative_path):
@@ -160,6 +161,7 @@ def main():
         SIGNUP_SETUP_FAILURE_PLAN_PATH,
         SIGNUP_TIMEOUT_PLAN_PATH,
         RETRYABLE_SIGNUP_FEEDBACK_PLAN_PATH,
+        SIGNUP_NETWORK_FAILURE_PLAN_PATH,
         "scripts/check-baseline.py",
     ]
     for path in required:
@@ -247,6 +249,11 @@ def main():
     require("set_text('signup-feedback', 'Please enter a valid email address.')" in failure_renderer and
             "set_text('signup'," not in failure_renderer,
             "signup failure renderer must update only the dedicated feedback region", failures)
+    retryable_failure_helper = template.split("function release_signup_for_retry()", 1)[1].split("var invite_request_in_flight", 1)[0]
+    require("invite_request_in_flight = false" in retryable_failure_helper and
+            "show_signup_failure()" in retryable_failure_helper and
+            retryable_failure_helper.find("invite_request_in_flight = false") < retryable_failure_helper.find("show_signup_failure()"),
+            "retryable signup failure helper must release ownership before generic feedback", failures)
     request_invite = template.split("function request_invite(event)", 1)[1].split("</script>", 1)[0]
     in_flight_guard_index = request_invite.find("if (invite_request_in_flight)")
     in_flight_start_index = request_invite.find("invite_request_in_flight = true")
@@ -257,30 +264,33 @@ def main():
     timeout_assignment_index = request_invite.find("request.timeout = signup_request_timeout_ms")
     completion_index = request_invite.find("if (request.readyState !== 4)")
     success_index = request_invite.find("if (request.status >= 200 && request.status < 300)")
-    failure_release_index = request_invite.find("invite_request_in_flight = false")
-    failure_message_index = request_invite.find("show_signup_failure()")
-    timeout_handler_index = request_invite.find("request.ontimeout = function()")
-    timeout_release_index = request_invite.find("invite_request_in_flight = false", timeout_handler_index)
-    timeout_message_index = request_invite.find("show_signup_failure()", timeout_handler_index)
+    success_return_index = request_invite.find("return;", success_index)
+    failure_release_index = request_invite.find("release_signup_for_retry()", success_return_index)
+    timeout_handler_index = request_invite.find("request.ontimeout = release_signup_for_retry")
+    network_error_handler_index = request_invite.find("request.onerror = release_signup_for_retry")
+    abort_handler_index = request_invite.find("request.onabort = release_signup_for_retry")
     request_send_index = request_invite.find("request.send(")
     setup_catch_index = request_invite.find("} catch (error)")
-    setup_release_index = request_invite.find("invite_request_in_flight = false", setup_catch_index)
-    setup_message_index = request_invite.find("show_signup_failure()", setup_catch_index)
+    setup_release_index = request_invite.find("release_signup_for_retry()", setup_catch_index)
     require("var invite_request_in_flight = false;" in template and
             0 <= in_flight_guard_index < in_flight_start_index < request_create_index,
             "signup JavaScript must reject overlapping requests before XHR setup", failures)
     require(0 <= in_flight_start_index < feedback_clear_index < setup_try_index,
             "accepted signup retries must clear stale feedback after acquiring ownership", failures)
-    require(0 <= completion_index < success_index < failure_release_index < failure_message_index < timeout_handler_index,
-            "completed signup failures must release ownership before retryable feedback", failures)
+    require(0 <= completion_index < success_index < success_return_index < failure_release_index < timeout_handler_index,
+            "completed signup failures must delegate only after terminal success returns", failures)
     require(0 <= in_flight_start_index < setup_try_index < request_create_index and
-            0 <= request_send_index < setup_catch_index < setup_release_index < setup_message_index,
-            "signup JavaScript must release request ownership before generic setup-failure feedback", failures)
+            0 <= request_send_index < setup_catch_index < setup_release_index,
+            "signup JavaScript must delegate synchronous setup failures for retry", failures)
     require("var signup_request_timeout_ms = 10000;" in template and
             0 <= request_open_index < timeout_assignment_index < timeout_handler_index < request_send_index,
             "signup JavaScript must install the finite request timeout before dispatch", failures)
-    require(0 <= timeout_handler_index < timeout_release_index < timeout_message_index < request_send_index,
-            "signup timeout must release request ownership before generic failure feedback", failures)
+    require(0 <= timeout_handler_index < network_error_handler_index < abort_handler_index < request_send_index,
+            "signup JavaScript must install timeout, network-error, and abort release handlers before dispatch", failures)
+    require(request_invite.count("release_signup_for_retry()") == 2 and
+            "invite_request_in_flight = false" not in request_invite and
+            "show_signup_failure()" not in request_invite,
+            "all retryable request failures must share the release helper", failures)
     require("set_text('signup-feedback', 'Please enter a valid email address.')" not in request_invite and
             "set_text('signup', 'Please enter a valid email address.')" not in request_invite and
             "set_text('signup', \"Thank You - we will review your application" in request_invite,
@@ -409,6 +419,8 @@ def main():
     for relative_path, guidance_source in guidance_sources.items():
         require("retryable signup feedback" in guidance_source.lower(),
                 f"{relative_path} must document retryable signup feedback", failures)
+        require("signup network failure release" in guidance_source.lower(),
+                f"{relative_path} must document signup network failure release", failures)
     readme = " ".join(read("README.md").split())
     for phrase in [
         "`SignUp` is the only application datastore entity",
@@ -549,6 +561,16 @@ def main():
             "external directory" in semantic_submit_verification and
             not re.search(r"(?i)\b(?:pending|todo|tbd|not run)\b", semantic_submit_verification),
             "semantic signup submit control plan must record completed verification", failures)
+    network_failure_plan = read(SIGNUP_NETWORK_FAILURE_PLAN_PATH)
+    network_failure_verification = markdown_section(
+        network_failure_plan, "Verification Completed"
+    )
+    require("status: completed" in network_failure_plan.lower() and
+            "All four Make gates passed" in network_failure_verification and
+            "Ten isolated hostile mutations were rejected" in network_failure_verification and
+            "external directory" in network_failure_verification and
+            not re.search(r"(?i)\b(?:pending|todo|tbd|not run)\b", network_failure_verification),
+            "signup network failure release plan must record completed verification", failures)
     idempotent_signup_plan = read(IDEMPOTENT_SIGNUP_PLAN_PATH) if (ROOT / IDEMPOTENT_SIGNUP_PLAN_PATH).is_file() else ""
     require("status: completed" in idempotent_signup_plan and "make check" in idempotent_signup_plan,
             "idempotent signup key plan must record status and verification", failures)
