@@ -48,6 +48,7 @@ RETRYABLE_SIGNUP_FEEDBACK_PLAN_PATH = "docs/plans/2026-06-15-retryable-signup-fa
 SEMANTIC_SIGNUP_SUBMIT_PLAN_PATH = "docs/plans/2026-06-15-semantic-signup-submit-control.md"
 SIGNUP_NETWORK_FAILURE_PLAN_PATH = "docs/plans/2026-06-16-signup-network-failure-release.md"
 SIGNUP_REQUEST_OWNERSHIP_PLAN_PATH = "docs/plans/2026-06-16-signup-request-ownership.md"
+SIGNUP_SUBMIT_BUSY_STATE_PLAN_PATH = "docs/plans/2026-06-17-signup-submit-busy-state.md"
 
 
 def read(relative_path):
@@ -223,7 +224,7 @@ def main():
     require("maxlength='254'" in template,
             "signup form must expose the server email length limit", failures)
     submit_control = template.split("<td>", 2)[-1].split("</td>", 1)[0]
-    require("<button type='submit' class='BigButton BlueButton'>" in submit_control and
+    require("<button type='submit' id='invite-submit' class='BigButton BlueButton'>" in submit_control and
             "<strong>Request Invitation</strong>" in submit_control and
             "onclick=" not in submit_control and
             "href=" not in submit_control and
@@ -255,9 +256,12 @@ def main():
     helper_identity_index = retryable_failure_helper.find("if (active_invite_request !== request)")
     helper_ownership_clear_index = retryable_failure_helper.find("active_invite_request = null")
     helper_in_flight_clear_index = retryable_failure_helper.find("invite_request_in_flight = false")
+    helper_submit_enable_index = retryable_failure_helper.find(
+        "document.getElementById('invite-submit').disabled = false"
+    )
     helper_feedback_index = retryable_failure_helper.find("show_signup_failure()")
-    require(0 <= helper_identity_index < helper_ownership_clear_index < helper_in_flight_clear_index < helper_feedback_index,
-            "retryable signup failure helper must verify and clear exact request ownership before generic feedback", failures)
+    require(0 <= helper_identity_index < helper_ownership_clear_index < helper_in_flight_clear_index < helper_submit_enable_index < helper_feedback_index,
+            "retryable signup failure helper must verify ownership before restoring submit state and feedback", failures)
     request_invite = template.split("function request_invite(event)", 1)[1].split("</script>", 1)[0]
     in_flight_guard_index = request_invite.find("if (invite_request_in_flight)")
     in_flight_start_index = request_invite.find("invite_request_in_flight = true")
@@ -266,6 +270,9 @@ def main():
     initial_owner_index = request_invite.find("active_invite_request = request", request_null_index)
     request_create_index = request_invite.find("new XMLHttpRequest()")
     request_owner_index = request_invite.find("active_invite_request = request", request_create_index)
+    submit_disable_index = request_invite.find(
+        "document.getElementById('invite-submit').disabled = true"
+    )
     request_open_index = request_invite.find("request.open('POST', '/signup', true)")
     setup_try_index = request_invite.find("try {")
     timeout_assignment_index = request_invite.find("request.timeout = signup_request_timeout_ms")
@@ -289,8 +296,8 @@ def main():
             "var active_invite_request = null;" in template and
             0 <= in_flight_guard_index < in_flight_start_index < request_create_index,
             "signup JavaScript must reject overlapping requests before XHR setup", failures)
-    require(0 <= in_flight_start_index < feedback_clear_index < request_null_index < initial_owner_index < setup_try_index < request_create_index < request_owner_index < request_open_index,
-            "accepted signup retries must clear stale feedback after acquiring ownership", failures)
+    require(0 <= in_flight_start_index < feedback_clear_index < request_null_index < initial_owner_index < setup_try_index < request_create_index < request_owner_index < submit_disable_index < request_open_index,
+            "accepted signup retries must acquire ownership and disable submit before XHR setup", failures)
     require(0 <= completion_index < callback_identity_index < success_index < success_owner_clear_index < success_in_flight_clear_index < success_render_index < success_return_index < failure_release_index,
             "completed signup callbacks must verify ownership and clear it before terminal success or failure", failures)
     require(0 <= in_flight_start_index < setup_try_index < request_create_index and
@@ -307,14 +314,21 @@ def main():
             "all retryable request failures must remain request-bound through the shared release helper", failures)
     require("set_text('signup-feedback', 'Please enter a valid email address.')" not in request_invite and
             "set_text('signup', 'Please enter a valid email address.')" not in request_invite and
+            "disabled = false" not in request_invite and
             "set_text('signup', \"Thank You - we will review your application" in request_invite,
-            "retryable failures must preserve the form while success remains terminal", failures)
+            "retryable failures must restore submit state while success remains terminal", failures)
 
     style = read("next/static/style.css")
     big_button_style = style.split(".BigButton {", 1)[1].split("}", 1)[0]
+    disabled_button_marker = ".BigButton:disabled {"
+    disabled_button_style = style.partition(disabled_button_marker)[2].partition("}")[0]
     require("font-family: inherit;" in big_button_style and
             "cursor: pointer;" in big_button_style,
             "semantic signup button must retain inherited typography and pointer affordance", failures)
+    require(disabled_button_marker in style and
+            "cursor: wait;" in disabled_button_style and
+            "opacity: 0.6;" in disabled_button_style,
+            "disabled signup button must expose a visible busy-state affordance", failures)
     require("http://s3.amazonaws.com" not in style, "background asset URL must use HTTPS", failures)
 
     app_yaml = read("next/app.yaml")
@@ -437,6 +451,8 @@ def main():
                 f"{relative_path} must document signup network failure release", failures)
         require("signup request ownership" in guidance_source.lower(),
                 f"{relative_path} must document signup request ownership", failures)
+        require("signup submit busy state" in guidance_source.lower(),
+                f"{relative_path} must document signup submit busy state", failures)
     readme = " ".join(read("README.md").split())
     for phrase in [
         "`SignUp` is the only application datastore entity",
@@ -597,6 +613,17 @@ def main():
             "external directory" in request_ownership_verification and
             not re.search(r"(?i)\b(?:pending|todo|tbd|not run)\b", request_ownership_verification),
             "signup request ownership plan must record completed verification", failures)
+    submit_busy_state_plan = read(SIGNUP_SUBMIT_BUSY_STATE_PLAN_PATH)
+    submit_busy_state_verification = markdown_section(
+        submit_busy_state_plan, "Verification Completed"
+    )
+    require("status: completed" in submit_busy_state_plan.lower() and
+            "All four Make gates passed" in submit_busy_state_verification and
+            "Nine isolated hostile mutations were rejected" in submit_busy_state_verification and
+            "external directory" in submit_busy_state_verification and
+            "browser" in submit_busy_state_verification and
+            not re.search(r"(?i)\b(?:pending|todo|tbd|not run)\b", submit_busy_state_verification),
+            "signup submit busy state plan must record completed verification", failures)
     idempotent_signup_plan = read(IDEMPOTENT_SIGNUP_PLAN_PATH) if (ROOT / IDEMPOTENT_SIGNUP_PLAN_PATH).is_file() else ""
     require("status: completed" in idempotent_signup_plan and "make check" in idempotent_signup_plan,
             "idempotent signup key plan must record status and verification", failures)

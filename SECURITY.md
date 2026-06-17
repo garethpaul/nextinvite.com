@@ -78,6 +78,8 @@ Helpful reports include:
   aborts through the same generic text-only retry path.
 - Signup request ownership should make duplicate or delayed terminal XHR events
   inert after a newer submission owns the global signup state.
+- The signup submit busy state should disable the semantic control only for the
+  active XHR and restore it only through that request's retryable release path.
 - App Engine handlers should keep `secure: always`, and templates should not disable Tornado autoescaping.
 - Classic `dev_appserver.py` and `appcfg.py` workflows require an
   era-compatible SDK. Keep local datastore files and exports out of git, and do

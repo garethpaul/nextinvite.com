@@ -1,6 +1,6 @@
 # Signup Submit Busy State
 
-Status: planned
+Status: completed
 
 ## Problem
 
@@ -29,10 +29,12 @@ and assistive technology receives no native disabled-state signal.
 Files:
 
 - `next/templates/home.html`
+- `next/static/style.css`
 
 Give the existing submit button a stable identifier. Disable it immediately
 after signup ownership is acquired and re-enable it inside the exact-request
-retry release helper after ownership is cleared. Keep success terminal.
+retry release helper after ownership is cleared. Keep success terminal and
+give the disabled control a visible non-interactive affordance.
 
 Test scenarios:
 
@@ -87,3 +89,30 @@ verification.
 - The control remains disabled after success because the containing form is
   immediately replaced; this is intentional terminal behavior.
 - This change is stacked on PR #13, which must remain open and merge first.
+
+## Work Completed
+
+- Added a stable identifier to the semantic submit button and disabled it only
+  after an XHR acquired exact page-local ownership.
+- Restored the control only through the exact-request retry helper after
+  ownership and the in-flight lock were cleared; successful completion remains
+  terminal and replaces the form without a retry-state release.
+- Added a visible disabled-state affordance and synchronized portable contracts,
+  README, security, vision, and change guidance.
+
+## Verification Completed
+
+- All four Make gates passed from the repository, and the absolute Makefile
+  check passed from an external directory.
+- Nine isolated hostile mutations were rejected across the stable control ID,
+  missing and misordered disable behavior, missing and premature re-enable
+  behavior, success-path re-enable, disabled styling, README guidance, and
+  completed plan status.
+- A dependency-free Node runtime harness executed the template JavaScript and
+  proved disable-on-ownership, retry re-enable, stale callback isolation, and
+  terminal success behavior with a fake DOM and XMLHttpRequest.
+- Checker compilation, exact diff review, generated-artifact inspection,
+  high-confidence secret-signature scanning, conflict-marker checks, mode,
+  binary, large-file, and whitespace audits passed.
+- The portable environment did not execute a browser, live XMLHttpRequest,
+  retired App Engine runtime, datastore, or production signup service.

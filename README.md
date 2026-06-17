@@ -73,6 +73,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   browser-aborted requests without exposing diagnostics.
 - Signup request ownership binds terminal success and retry release to the
   active XHR so delayed events cannot unlock a newer submission.
+- The signup submit busy state disables the semantic control for the active XHR
+  and restores it only through that request's retryable release path.
 - The signup body limit rejects form bodies larger than 4 KiB with a generic
   `413` before the handler reads the email argument.
 
