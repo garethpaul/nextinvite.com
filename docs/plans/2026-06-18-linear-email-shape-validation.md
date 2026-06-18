@@ -1,6 +1,6 @@
 # Linear Email Shape Validation
 
-Status: planned
+Status: completed
 
 ## Problem
 
@@ -93,8 +93,28 @@ Document the linear structural boundary and record exact completed validation.
 
 ## Work Completed
 
-Pending implementation.
+- Removed the broad overall-address regular expression reported by CodeQL and
+  replaced it with explicit linear checks for one `@`, nonempty parts, and a
+  dotted domain.
+- Preserved the existing bounded local-part, dot, domain-label,
+  top-level-domain, and total-length validators and added runtime coverage for
+  the structural cases.
+- Added portable static contracts and synchronized README, security, vision,
+  and change guidance.
 
 ## Verification Completed
 
-Pending implementation and validation.
+- All four Make gates passed from the repository, and the absolute Makefile
+  check passed from an external directory.
+- Eight isolated hostile mutations were rejected across restoration of the
+  CodeQL-reported expression, separator splitting and cardinality, nonempty
+  local and domain parts, dotted-domain enforcement, validation-chain wiring,
+  and synchronized guidance.
+- Checker compilation, exact diff review, generated-artifact inspection,
+  high-confidence secret-signature scanning, conflict-marker checks, mode,
+  binary, large-file, and whitespace audits passed.
+- The dependency-free runtime harness accepted conventional, plus-tagged,
+  maximum-length, and punycode-style addresses and rejected missing, repeated,
+  blank, or undotted structural parts alongside the existing invalid cases.
+- Local validation did not execute GitHub CodeQL, a browser, the retired App
+  Engine runtime, datastore, or the production signup service.

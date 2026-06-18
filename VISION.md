@@ -30,6 +30,7 @@ Priority:
 - Keep domain label character validation in place before datastore persistence
 - Keep local-part validation in place before datastore persistence
 - Keep top-level domain validation in place before datastore persistence
+- Keep linear email shape validation free of broad overall-address expressions
 - Keep dependency-free signup JavaScript in place for the invite form
 - Keep the signup form submit guard on the dependency-free invite request path
 - Keep the semantic signup submit control behind native form validation

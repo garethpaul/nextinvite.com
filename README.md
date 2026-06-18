@@ -136,6 +136,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   parts before persistence.
 - Top-level domain validation keeps final domain labels to plausible public
   email suffixes before persistence.
+- Linear email shape validation requires one separator and a dotted domain
+  without a broad overall-address regular expression.
 - Dependency-free signup JavaScript keeps the invite flow working without a
   remote script dependency.
 - The signup form submit guard keeps keyboard submissions on the same XSRF-aware

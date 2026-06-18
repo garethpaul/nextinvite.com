@@ -49,6 +49,7 @@ SEMANTIC_SIGNUP_SUBMIT_PLAN_PATH = "docs/plans/2026-06-15-semantic-signup-submit
 SIGNUP_NETWORK_FAILURE_PLAN_PATH = "docs/plans/2026-06-16-signup-network-failure-release.md"
 SIGNUP_REQUEST_OWNERSHIP_PLAN_PATH = "docs/plans/2026-06-16-signup-request-ownership.md"
 SIGNUP_SUBMIT_BUSY_STATE_PLAN_PATH = "docs/plans/2026-06-17-signup-submit-busy-state.md"
+LINEAR_EMAIL_SHAPE_PLAN_PATH = "docs/plans/2026-06-18-linear-email-shape-validation.md"
 
 
 def read(relative_path):
@@ -165,6 +166,7 @@ def main():
         RETRYABLE_SIGNUP_FEEDBACK_PLAN_PATH,
         SIGNUP_NETWORK_FAILURE_PLAN_PATH,
         SIGNUP_REQUEST_OWNERSHIP_PLAN_PATH,
+        LINEAR_EMAIL_SHAPE_PLAN_PATH,
         "scripts/check-baseline.py",
     ]
     for path in required:
@@ -177,8 +179,23 @@ def main():
             failures.append(f"{path} must parse as Python: {error}")
 
     server = read("next/server.py")
-    require("EMAIL_RE" in server and "normalize_email" in server and "is_valid_email" in server,
+    require("EMAIL_RE" not in server and "normalize_email" in server and "is_valid_email" in server,
             "signup route must validate and normalize email addresses", failures)
+    email_shape = server.split("def has_valid_email_shape(email):", 1)[1].split(
+        "def has_valid_email_dots", 1
+    )[0]
+    email_validation = server.split("def is_valid_email(email):", 1)[1].split(
+        "class SignUp", 1
+    )[0]
+    require(
+        'parts = email.split("@")' in email_shape
+        and "if len(parts) != 2:" in email_shape
+        and "local, domain = parts" in email_shape
+        and 'return bool(local and domain and "." in domain)' in email_shape
+        and "and has_valid_email_shape(email)" in email_validation,
+        "signup route must use linear overall email shape validation",
+        failures,
+    )
     require("def signup_key_name(email)" in server and
             'hashlib.sha256(normalized_email.encode("utf-8")).hexdigest()' in server and
             "SignUp(key_name=signup_key_name(email))" in server,
@@ -356,6 +373,16 @@ def main():
         require(module.normalize_email(" USER@Example.COM ") == "user@example.com",
                 "normalize_email must trim and lowercase", failures)
         require(module.is_valid_email("user@example.com"), "valid email must be accepted", failures)
+        require(module.has_valid_email_shape("user@example.com"),
+                "valid email shape must be accepted", failures)
+        require(not module.has_valid_email_shape("user@@example.com"),
+                "multiple email separators must be rejected", failures)
+        require(not module.has_valid_email_shape("@example.com"),
+                "blank email local part must be rejected", failures)
+        require(not module.has_valid_email_shape("user@"),
+                "blank email domain must be rejected", failures)
+        require(not module.has_valid_email_shape("user@example"),
+                "email domain without a dot must be rejected", failures)
         require(module.is_valid_email("user+tag@example.com"),
                 "plus-tagged local part must be accepted", failures)
         valid_254_email = ("a" * 64) + "@" + ("b" * 63) + "." + ("c" * 63) + "." + ("d" * 61)
@@ -395,6 +422,10 @@ def main():
                 "single-character top-level domain must be rejected", failures)
         require(not module.is_valid_email("user@example.123"),
                 "all-numeric top-level domain must be rejected", failures)
+        require(not module.is_valid_email("user@@example.com"),
+                "email with multiple separators must be rejected", failures)
+        require(not module.is_valid_email("user@example"),
+                "email without a dotted domain must be rejected", failures)
         require(not module.is_valid_email("not-an-email"), "invalid email must be rejected", failures)
     except Exception as error:
         failures.append(f"server helper contracts failed: {error}")
@@ -453,6 +484,8 @@ def main():
                 f"{relative_path} must document signup request ownership", failures)
         require("signup submit busy state" in guidance_source.lower(),
                 f"{relative_path} must document signup submit busy state", failures)
+        require("linear email shape validation" in guidance_source.lower(),
+                f"{relative_path} must document linear email shape validation", failures)
     readme = " ".join(read("README.md").split())
     for phrase in [
         "`SignUp` is the only application datastore entity",
@@ -624,6 +657,17 @@ def main():
             "browser" in submit_busy_state_verification and
             not re.search(r"(?i)\b(?:pending|todo|tbd|not run)\b", submit_busy_state_verification),
             "signup submit busy state plan must record completed verification", failures)
+    linear_email_shape_plan = read(LINEAR_EMAIL_SHAPE_PLAN_PATH)
+    linear_email_shape_verification = markdown_section(
+        linear_email_shape_plan, "Verification Completed"
+    )
+    require("status: completed" in linear_email_shape_plan.lower() and
+            "All four Make gates passed" in linear_email_shape_verification and
+            "Eight isolated hostile mutations were rejected" in linear_email_shape_verification and
+            "external directory" in linear_email_shape_verification and
+            "CodeQL" in linear_email_shape_verification and
+            not re.search(r"(?i)\b(?:pending|todo|tbd|not run)\b", linear_email_shape_verification),
+            "linear email shape validation plan must record completed verification", failures)
     idempotent_signup_plan = read(IDEMPOTENT_SIGNUP_PLAN_PATH) if (ROOT / IDEMPOTENT_SIGNUP_PLAN_PATH).is_file() else ""
     require("status: completed" in idempotent_signup_plan and "make check" in idempotent_signup_plan,
             "idempotent signup key plan must record status and verification", failures)

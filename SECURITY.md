@@ -60,6 +60,8 @@ Helpful reports include:
   reject unsafe or non-ASCII characters before datastore persistence.
 - Top-level domain validation should reject one-character or all-numeric final
   labels before datastore persistence.
+- Linear email shape validation should require exactly one separator and a
+  dotted domain without evaluating a broad overall-address regular expression.
 - Dependency-free signup JavaScript should keep the invite form independent of
   remote jQuery while preserving XSRF form serialization.
 - The signup form submit guard should keep keyboard form submissions on the

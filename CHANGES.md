@@ -1,5 +1,10 @@
 # Changes
 
+## 2026-06-18
+
+- Replaced the broad overall-address expression with linear email shape validation
+  for one separator and a dotted domain.
+
 ## 2026-06-17
 
 - Added a request-owned signup submit busy state so accepted requests disable
