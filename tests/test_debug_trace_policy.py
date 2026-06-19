@@ -7,6 +7,7 @@ import importlib.util
 import os
 import sys
 import textwrap
+import traceback
 import types
 import unittest
 from unittest import mock
@@ -97,6 +98,7 @@ class Handler(object):
         "httplib": types.SimpleNamespace(responses={500: "Internal Server Error"}),
         "logging": logging_module,
         "sys": sys,
+        "traceback": traceback,
     }
     exec(compile(converted, "legacy_web_handler", "exec"), namespace)
     return namespace["Handler"]
