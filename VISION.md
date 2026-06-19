@@ -35,7 +35,8 @@ Priority:
 - Keep the signup body limit before signup argument access
 - Keep `make lint`, `make test`, `make build`, and `make check` on the
   SDK-free static baseline
-- Keep that dependency-free baseline pinned and read-only in hosted Linux CI
+- Keep that dependency-free baseline pinned, read-only, and credential-free in
+  hosted Linux CI
 
 Next priorities:
 

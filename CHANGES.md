@@ -1,5 +1,10 @@
 # Changes
 
+## 2026-06-12
+
+- Disabled checkout credential persistence in the pinned, read-only hosted
+  validation job and added structural checks for that boundary.
+
 ## 2026-06-10
 
 - Added a signup body limit that rejects more than 4 KiB with a generic `413`
