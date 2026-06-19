@@ -41,7 +41,15 @@ Require the size, status, generic error, and pre-argument ordering. Document
 that the guard bounds application handling rather than upstream transport
 buffering.
 
-## Verification
+## Work Completed
+
+- Added a 4 KiB application-level signup body limit.
+- Checked the body size before reading the email argument.
+- Returned a generic `413` response for oversized requests.
+- Preserved the existing XSRF, email-validation, and idempotent persistence
+  contracts.
+
+## Verification Completed
 
 Completed locally on 2026-06-12:
 
@@ -54,11 +62,16 @@ Completed locally on 2026-06-12:
   access before the guard, were each rejected by the static contract
 - `git diff --check`
 
-Completed on GitHub Actions for implementation head
-`7f603f87d06aed9b64770aaf9337fb38eaad6f7b`:
+Completed on GitHub Actions for final head
+`38ec086796059511cc29df438e6c23e010a456cd`:
 
-- push run `27397751878`: success
-- pull-request run `27397752986`: success
+- push run `27397766640`: success
+- pull-request run `27397768643`: success
+
+The verified implementation preserves `MAX_SIGNUP_BODY_BYTES = 4096`,
+`request_body = self.request.body or ""`,
+`if len(request_body) > MAX_SIGNUP_BODY_BYTES`, `self.set_status(413)`, and
+`self.write("request too large")` before `self.get_argument('email', '')`.
 
 ## Boundaries
 
