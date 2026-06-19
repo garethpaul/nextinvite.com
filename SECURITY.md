@@ -42,6 +42,8 @@ Helpful reports include:
   Engine deployment, datastore access, or external service calls.
 - Signup emails are private user data. Do not commit datastore exports, request logs, local App Engine data, `.env` files, or production configuration.
 - Signup email inputs should stay normalized, format-checked, and capped at the 254-character address boundary before datastore persistence.
+- The signup body limit should reject more than 4 KiB before handler argument
+  access and return a generic `413` without echoing private form content.
 - Idempotent signup keys should hash normalized addresses with SHA-256 so retry
   deduplication does not expose plaintext email in datastore identifiers; this
   is deterministic hashing, not encryption.

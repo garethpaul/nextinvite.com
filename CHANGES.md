@@ -2,6 +2,8 @@
 
 ## 2026-06-10
 
+- Added a signup body limit that rejects more than 4 KiB with a generic `413`
+  before email argument access.
 - Added idempotent signup keys using a prefixed SHA-256 digest of normalized
   email addresses to avoid duplicate retry entities and plaintext datastore keys.
 - Added pinned, read-only Python 3.12 hosted validation for the dependency-free

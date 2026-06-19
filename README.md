@@ -59,6 +59,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   while preserving XSRF form serialization and text-only status updates.
 - The signup form submit guard sends Enter-key form submissions through the
   same dependency-free invite request handler as button clicks.
+- The signup body limit rejects form bodies larger than 4 KiB with a generic
+  `413` before the handler reads the email argument.
 
 ## Testing and Verification
 
@@ -96,6 +98,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   remote script dependency.
 - The signup form submit guard keeps keyboard submissions on the same XSRF-aware
   AJAX path as click submissions.
+- The signup body limit bounds application-level form handling; upstream App
+  Engine or Tornado layers may still buffer request transport data.
 - Preserve idempotent signup key generation when changing datastore persistence.
 - App Engine handlers are configured with `secure: always`, and templates should not disable Tornado autoescaping.
 - Review changes touching authentication or token handling; examples from the scan include next/base.py, next/markdown.py, next/tornado/auth.py, next/tornado/database.py, and 6 more.

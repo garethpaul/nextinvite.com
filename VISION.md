@@ -32,6 +32,7 @@ Priority:
 - Keep top-level domain validation in place before datastore persistence
 - Keep dependency-free signup JavaScript in place for the invite form
 - Keep the signup form submit guard on the dependency-free invite request path
+- Keep the signup body limit before signup argument access
 - Keep `make lint`, `make test`, `make build`, and `make check` on the
   SDK-free static baseline
 - Keep that dependency-free baseline pinned and read-only in hosted Linux CI
@@ -56,6 +57,7 @@ Contribution rules:
 - Preserve top-level domain validation when changing signup handling.
 - Preserve dependency-free signup JavaScript when changing the invite form.
 - Preserve the signup form submit guard when changing invite form behavior.
+- Preserve the signup body limit when changing signup request handling.
 - Preserve idempotent signup key generation when changing datastore writes.
 - Run `make lint`, `make test`, `make build`, and `make check` before pushing
   route, template, or validation changes.
