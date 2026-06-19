@@ -43,6 +43,7 @@ DATASTORE_LOCAL_DEVELOPMENT_PLAN_PATH = "docs/plans/2026-06-13-datastore-local-d
 LOCATION_INDEPENDENT_MAKE_PLAN_PATH = "docs/plans/2026-06-13-location-independent-make.md"
 SIGNUP_IN_FLIGHT_PLAN_PATH = "docs/plans/2026-06-15-signup-in-flight-guard.md"
 SIGNUP_SETUP_FAILURE_PLAN_PATH = "docs/plans/2026-06-15-signup-setup-failure-release.md"
+SIGNUP_TIMEOUT_PLAN_PATH = "docs/plans/2026-06-15-signup-timeout-release.md"
 
 
 def read(relative_path):
@@ -229,10 +230,15 @@ def main():
     in_flight_guard_index = request_invite.find("if (invite_request_in_flight)")
     in_flight_start_index = request_invite.find("invite_request_in_flight = true")
     request_create_index = request_invite.find("new XMLHttpRequest()")
+    request_open_index = request_invite.find("request.open('POST', '/signup', true)")
     setup_try_index = request_invite.find("try {")
+    timeout_assignment_index = request_invite.find("request.timeout = signup_request_timeout_ms")
     completion_index = request_invite.find("if (request.readyState !== 4)")
     success_index = request_invite.find("if (request.status >= 200 && request.status < 300)")
     failure_release_index = request_invite.find("invite_request_in_flight = false")
+    timeout_handler_index = request_invite.find("request.ontimeout = function()")
+    timeout_release_index = request_invite.find("invite_request_in_flight = false", timeout_handler_index)
+    timeout_message_index = request_invite.find("set_text('signup', 'Please enter a valid email address.')", timeout_handler_index)
     request_send_index = request_invite.find("request.send(")
     setup_catch_index = request_invite.find("} catch (error)")
     setup_release_index = request_invite.find("invite_request_in_flight = false", setup_catch_index)
@@ -245,6 +251,11 @@ def main():
     require(0 <= in_flight_start_index < setup_try_index < request_create_index and
             0 <= request_send_index < setup_catch_index < setup_release_index < setup_message_index,
             "signup JavaScript must release request ownership before generic setup-failure feedback", failures)
+    require("var signup_request_timeout_ms = 10000;" in template and
+            0 <= request_open_index < timeout_assignment_index < timeout_handler_index < request_send_index,
+            "signup JavaScript must install the finite request timeout before dispatch", failures)
+    require(0 <= timeout_handler_index < timeout_release_index < timeout_message_index < request_send_index,
+            "signup timeout must release request ownership before generic failure feedback", failures)
 
     style = read("next/static/style.css")
     require("http://s3.amazonaws.com" not in style, "background asset URL must use HTTPS", failures)
@@ -349,6 +360,8 @@ def main():
             "docs must mention the signup body limit", failures)
     require("signup in-flight guard" in docs.lower(),
             "docs must mention the signup in-flight guard", failures)
+    require("signup request timeout release" in docs.lower(),
+            "docs must mention the signup request timeout release", failures)
     readme = " ".join(read("README.md").split())
     for phrase in [
         "`SignUp` is the only application datastore entity",
@@ -402,6 +415,8 @@ def main():
             "CHANGES must mention the signup body limit", failures)
     require("signup in-flight guard" in changes.lower(),
             "CHANGES must mention the signup in-flight guard", failures)
+    require("signup request timeout release" in changes.lower(),
+            "CHANGES must mention the signup request timeout release", failures)
     for phrase in ["make lint", "make test", "make build", "make check"]:
         require(phrase in changes, f"CHANGES must mention {phrase}", failures)
 
@@ -455,6 +470,16 @@ def main():
             "external directory" in signup_setup_failure_verification and
             not re.search(r"(?i)\b(?:pending|todo|tbd|not run)\b", signup_setup_failure_verification),
             "signup setup failure release plan must record completed verification", failures)
+    signup_timeout_plan = read(SIGNUP_TIMEOUT_PLAN_PATH)
+    signup_timeout_verification = markdown_section(
+        signup_timeout_plan, "Verification Completed"
+    )
+    require("status: completed" in signup_timeout_plan.lower() and
+            "All four Make gates passed" in signup_timeout_verification and
+            "Seven isolated hostile mutations were rejected" in signup_timeout_verification and
+            "external directory" in signup_timeout_verification and
+            not re.search(r"(?i)\b(?:pending|todo|tbd|not run)\b", signup_timeout_verification),
+            "signup request timeout release plan must record completed verification", failures)
     idempotent_signup_plan = read(IDEMPOTENT_SIGNUP_PLAN_PATH) if (ROOT / IDEMPOTENT_SIGNUP_PLAN_PATH).is_file() else ""
     require("status: completed" in idempotent_signup_plan and "make check" in idempotent_signup_plan,
             "idempotent signup key plan must record status and verification", failures)
