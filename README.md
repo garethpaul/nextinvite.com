@@ -59,6 +59,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   while preserving XSRF form serialization and text-only status updates.
 - The signup form submit guard sends Enter-key form submissions through the
   same dependency-free invite request handler as button clicks.
+- The semantic signup submit control uses native button and form validation
+  behavior for both pointer and keyboard activation.
 - The signup in-flight guard rejects overlapping click or keyboard requests
   until the current response completes.
 - The signup setup failure release restores retry when browser XHR setup or
@@ -132,6 +134,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   remote script dependency.
 - The signup form submit guard keeps keyboard submissions on the same XSRF-aware
   AJAX path as click submissions.
+- Preserve the semantic signup submit control so clicks cannot bypass native
+  email constraints or the form submit event.
 - The signup in-flight guard should keep one browser request pending at a time
   and release failed attempts for retry.
 - The signup request timeout release should bound a stalled browser request to

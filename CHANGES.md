@@ -2,6 +2,8 @@
 
 ## 2026-06-15
 
+- Added a semantic signup submit control so pointer and keyboard activation use
+  native email constraints before the shared dependency-free submit handler.
 - Added a signup in-flight guard to prevent overlapping browser POSTs while
   preserving retry after completed failures.
 - Added signup setup failure release so synchronous XHR setup or dispatch

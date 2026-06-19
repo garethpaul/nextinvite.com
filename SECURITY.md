@@ -64,6 +64,8 @@ Helpful reports include:
   remote jQuery while preserving XSRF form serialization.
 - The signup form submit guard should keep keyboard form submissions on the
   same dependency-free, XSRF-aware request path as click submissions.
+- The semantic signup submit control should keep pointer activation behind
+  native form constraints and the XSRF-aware submit event.
 - The signup in-flight guard should prevent overlapping browser POSTs while
   preserving retry after a completed failure.
 - The signup setup failure release should restore retry without exposing
