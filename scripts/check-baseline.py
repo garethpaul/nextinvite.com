@@ -159,18 +159,25 @@ def main():
         HOSTED_VALIDATION_PLAN_PATH,
         SIGNUP_BODY_LIMIT_PLAN_PATH,
         CHECKOUT_CREDENTIAL_PLAN_PATH,
+        DATASTORE_LOCAL_DEVELOPMENT_PLAN_PATH,
         LOCATION_INDEPENDENT_MAKE_PLAN_PATH,
         SIGNUP_IN_FLIGHT_PLAN_PATH,
         SIGNUP_SETUP_FAILURE_PLAN_PATH,
         SIGNUP_TIMEOUT_PLAN_PATH,
         RETRYABLE_SIGNUP_FEEDBACK_PLAN_PATH,
+        SEMANTIC_SIGNUP_SUBMIT_PLAN_PATH,
         SIGNUP_NETWORK_FAILURE_PLAN_PATH,
         SIGNUP_REQUEST_OWNERSHIP_PLAN_PATH,
+        SIGNUP_SUBMIT_BUSY_STATE_PLAN_PATH,
         LINEAR_EMAIL_SHAPE_PLAN_PATH,
         "scripts/check-baseline.py",
     ]
     for path in required:
         require((ROOT / path).is_file(), f"required file missing: {path}", failures)
+    for path in sorted(
+        value for name, value in globals().items() if name.endswith("_PLAN_PATH")
+    ):
+        require(path in required, f"plan path missing from required list: {path}", failures)
 
     for path in ["next/server.py", "next/base.py", "scripts/check-baseline.py"]:
         try:
@@ -240,6 +247,10 @@ def main():
             "signup form must use required email input", failures)
     require("maxlength='254'" in template,
             "signup form must expose the server email length limit", failures)
+    require("for='email'" in template and ">Email address<" in template,
+            "signup email input must have an associated label", failures)
+    require("autocomplete='email'" in template and "spellcheck='false'" in template,
+            "signup email input must expose email autocomplete and disable spellcheck", failures)
     submit_control = template.split("<td>", 2)[-1].split("</td>", 1)[0]
     require("<button type='submit' id='invite-submit' class='BigButton BlueButton'>" in submit_control and
             "<strong>Request Invitation</strong>" in submit_control and

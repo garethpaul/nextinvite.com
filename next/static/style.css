@@ -14,6 +14,16 @@ margin-bottom: 32px;
 text-align: center;
 font-weight: 300;
 }
+.VisuallyHidden {
+position: absolute;
+width: 1px;
+height: 1px;
+padding: 0;
+margin: -1px;
+overflow: hidden;
+clip: rect(0, 0, 0, 0);
+border: 0;
+}
 #Welcome h1 {
 margin-bottom: 41px;
 text-align: center;
