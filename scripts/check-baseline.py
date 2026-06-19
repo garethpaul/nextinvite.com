@@ -24,6 +24,7 @@ IDEMPOTENT_SIGNUP_PLAN_PATH = "docs/plans/2026-06-10-idempotent-signup-key.md"
 HOSTED_VALIDATION_PLAN_PATH = "docs/plans/2026-06-10-hosted-static-validation.md"
 SIGNUP_BODY_LIMIT_PLAN_PATH = "docs/plans/2026-06-12-signup-body-limit.md"
 CHECKOUT_CREDENTIAL_PLAN_PATH = "docs/plans/2026-06-12-checkout-credential-boundary.md"
+DATASTORE_LOCAL_DEVELOPMENT_PLAN_PATH = "docs/plans/2026-06-13-datastore-local-development.md"
 
 
 def read(relative_path):
@@ -298,6 +299,40 @@ def main():
             "docs must mention the signup form submit guard", failures)
     require("signup body limit" in docs.lower(),
             "docs must mention the signup body limit", failures)
+    readme = " ".join(read("README.md").split())
+    for phrase in [
+        "`SignUp` is the only application datastore entity",
+        "`email` `db.TextProperty`",
+        "`added` `db.DateTimeProperty`",
+        "signup-<sha256>",
+        "not encryption",
+        "stored as plaintext private data",
+        "retired Python 2 App Engine standard environment",
+        "dev_appserver.py next/app.yaml",
+        "appcfg.py update next/",
+        "deployment is not verified",
+        "Keep local datastore files, datastore exports",
+    ]:
+        require(phrase in readme,
+                f"README datastore guidance must mention {phrase}", failures)
+    security = " ".join(read("SECURITY.md").split())
+    for phrase in [
+        "stores normalized email as plaintext private data",
+        "provides retry idempotency, not encryption",
+        "Keep local datastore files and exports out of git",
+        "do not deploy without an owned App Engine project",
+    ]:
+        require(phrase in security,
+                f"security datastore guidance must mention {phrase}", failures)
+    vision = " ".join(read("VISION.md").split())
+    for phrase in [
+        "normalized plaintext email",
+        "idempotency, not encryption",
+        "historical and unverified",
+        "local datastore files, exports, credentials",
+    ]:
+        require(phrase in vision,
+                f"vision datastore guidance must mention {phrase}", failures)
     changes = read("CHANGES.md")
     require("email dot validation" in changes.lower(),
             "CHANGES must mention email dot validation", failures)
@@ -351,6 +386,14 @@ def main():
     idempotent_signup_plan = read(IDEMPOTENT_SIGNUP_PLAN_PATH) if (ROOT / IDEMPOTENT_SIGNUP_PLAN_PATH).is_file() else ""
     require("status: completed" in idempotent_signup_plan and "make check" in idempotent_signup_plan,
             "idempotent signup key plan must record status and verification", failures)
+    datastore_local_development_plan = read(DATASTORE_LOCAL_DEVELOPMENT_PLAN_PATH)
+    require(
+        "status: completed" in datastore_local_development_plan
+        and "make check" in datastore_local_development_plan
+        and "hostile mutations rejected" in datastore_local_development_plan,
+        "datastore local development plan must record completed verification",
+        failures,
+    )
     signup_body_limit_plan = read(SIGNUP_BODY_LIMIT_PLAN_PATH) if (ROOT / SIGNUP_BODY_LIMIT_PLAN_PATH).is_file() else ""
     signup_body_status = re.findall(r"(?mi)^status:\s*(.+?)\s*$", signup_body_limit_plan)
     signup_body_work = markdown_section(signup_body_limit_plan, "Work Completed")

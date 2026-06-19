@@ -1,5 +1,12 @@
 # Changes
 
+## 2026-06-13
+
+- Documented the `SignUp` datastore entity, plaintext email storage,
+  deterministic idempotent key, and automatic creation timestamp.
+- Recorded the retired Python 2 App Engine SDK boundary, historical local and
+  deployment commands, and local datastore/export exclusions.
+
 ## 2026-06-12
 
 - Disabled checkout credential persistence in the pinned, read-only hosted
