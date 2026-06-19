@@ -10,6 +10,21 @@ import types
 
 
 ROOT = Path(__file__).resolve().parents[1]
+EXPECTED_MAKEFILE = """ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
+
+.PHONY: build check lint static-check test verify
+
+PYTHON ?= python3
+
+check: verify
+
+verify: static-check
+
+lint test build: static-check
+
+static-check:
+\tPYTHONDONTWRITEBYTECODE=1 $(PYTHON) "$(ROOT)/scripts/check-baseline.py"
+"""
 PLAN_PATH = "docs/plans/2026-06-08-nextinvite-baseline.md"
 LENGTH_PLAN_PATH = "docs/plans/2026-06-09-signup-email-length.md"
 DOT_PLAN_PATH = "docs/plans/2026-06-09-signup-email-dot-validation.md"
@@ -25,6 +40,7 @@ HOSTED_VALIDATION_PLAN_PATH = "docs/plans/2026-06-10-hosted-static-validation.md
 SIGNUP_BODY_LIMIT_PLAN_PATH = "docs/plans/2026-06-12-signup-body-limit.md"
 CHECKOUT_CREDENTIAL_PLAN_PATH = "docs/plans/2026-06-12-checkout-credential-boundary.md"
 DATASTORE_LOCAL_DEVELOPMENT_PLAN_PATH = "docs/plans/2026-06-13-datastore-local-development.md"
+LOCATION_INDEPENDENT_MAKE_PLAN_PATH = "docs/plans/2026-06-13-location-independent-make.md"
 
 
 def read(relative_path):
@@ -134,6 +150,7 @@ def main():
         HOSTED_VALIDATION_PLAN_PATH,
         SIGNUP_BODY_LIMIT_PLAN_PATH,
         CHECKOUT_CREDENTIAL_PLAN_PATH,
+        LOCATION_INDEPENDENT_MAKE_PLAN_PATH,
         "scripts/check-baseline.py",
     ]
     for path in required:
@@ -215,13 +232,9 @@ def main():
             "all App Engine handlers must require secure transport", failures)
 
     makefile = read("Makefile")
-    for expected in [
-        ".PHONY: build check lint static-check test verify",
-        "check: verify",
-        "verify: static-check",
-        "lint test build: static-check",
-    ]:
-        require(expected in makefile, f"Makefile must expose standard gate alias: {expected}", failures)
+    require(makefile == EXPECTED_MAKEFILE,
+            "Makefile must exactly preserve rooted dependency-free aliases and the Python override",
+            failures)
 
     gitignore = read(".gitignore")
     for expected in ["__pycache__/", "*.pyc", ".env", "appengine-generated/", "local_db.bin", "bulkloader-*"]:
@@ -280,7 +293,18 @@ def main():
     except Exception as error:
         failures.append(f"server helper contracts failed: {error}")
 
-    docs = read("README.md") + "\n" + read("VISION.md") + "\n" + read("SECURITY.md")
+    readme_source = read("README.md")
+    docs = readme_source + "\n" + read("VISION.md") + "\n" + read("SECURITY.md")
+    location_independent_make_plan = read(LOCATION_INDEPENDENT_MAKE_PLAN_PATH)
+    require("make -f /path/to/nextinvite.com/Makefile check" in readme_source,
+            "README must document location-independent Makefile invocation", failures)
+    require(all(evidence in location_independent_make_plan.lower() for evidence in [
+        "status: completed",
+        "root and external-directory",
+        "six isolated hostile mutations",
+    ]),
+            "location-independent Make plan must record completed root, external, and mutation verification",
+            failures)
     for phrase in ["make lint", "make test", "make build", "make check", "datastore", "private user data"]:
         require(phrase in docs.lower(), f"docs must mention {phrase}", failures)
     require("email dot validation" in docs.lower(),

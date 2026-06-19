@@ -90,6 +90,9 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 - `make test`
 - `make build`
 - `make check`
+- The Make gates are location-independent. From another directory, pass the
+  checkout's Makefile by absolute path, such as
+  `make -f /path/to/nextinvite.com/Makefile check`.
 - `python3 scripts/check-baseline.py`
 - Pinned `ubuntu-24.04` GitHub Actions uses a read-only, credential-free
   checkout and runs the same dependency-free baseline on Python 3.12 without
@@ -138,6 +141,7 @@ When the required SDK or runtime is unavailable, use static checks and source re
 
 - Run `make lint`, `make test`, `make build`, and `make check` before pushing
   route, template, App Engine config, or security documentation changes.
+- Use an absolute Makefile path when running those gates outside the checkout.
 - See `docs/plans/2026-06-09-make-gate-aliases.md` for the local verification
   gate aliases.
 - See `docs/plans/2026-06-09-dependency-free-signup-javascript.md` for the
