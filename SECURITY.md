@@ -49,6 +49,12 @@ Helpful reports include:
 - Signup email inputs should stay normalized, format-checked, and capped at the 254-character address boundary before datastore persistence.
 - The signup body limit should reject more than 4 KiB before handler argument
   access and return a generic `413` without echoing private form content.
+- HTTP error responses remain generic for production and local debugging;
+  uncaught exception details remain in server-side logs and must never be
+  rendered into response bodies.
+- Runtime migration remains P0 before redeployment. The retired Python 2 App
+  Engine runtime and the remaining vendored framework surface require a
+  separate migration review before this application is exposed again.
 - Idempotent signup keys should hash normalized addresses with SHA-256 so retry
   deduplication does not expose plaintext email in datastore identifiers; this
   is deterministic hashing, not encryption.

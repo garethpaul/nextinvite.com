@@ -4,6 +4,8 @@
 
 - Replaced the broad overall-address expression with linear email shape validation
   for one separator and a dotted domain.
+- Removed vendored Tornado stack traces from default HTTP error responses,
+  retained server-side exception logging, and pinned application debug mode off.
 
 ## 2026-06-17
 

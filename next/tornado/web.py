@@ -72,7 +72,6 @@ import sys
 import threading
 import time
 import tornado
-import traceback
 import types
 import urllib
 import urlparse
@@ -702,18 +701,11 @@ class RequestHandler(object):
             else:
                 self.finish(self.get_error_html(status_code, **kwargs))
             return
-        if self.settings.get("debug") and "exc_info" in kwargs:
-            # in debug mode, try to send a traceback
-            self.set_header('Content-Type', 'text/plain')
-            for line in traceback.format_exception(*kwargs["exc_info"]):
-                self.write(line)
-            self.finish()
-        else:
-            self.finish("<html><title>%(code)d: %(message)s</title>" 
-                        "<body>%(code)d: %(message)s</body></html>" % {
-                    "code": status_code,
-                    "message": httplib.responses[status_code],
-                    })
+        self.finish("<html><title>%(code)d: %(message)s</title>"
+                    "<body>%(code)d: %(message)s</body></html>" % {
+                "code": status_code,
+                "message": httplib.responses[status_code],
+                })
 
     @property
     def locale(self):

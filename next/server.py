@@ -144,7 +144,7 @@ settings = {
     "blog_title": u"Next invite",
     "template_path": os.path.join(os.path.dirname(__file__), "templates"),
     "xsrf_cookies": True,
-    "debug": os.environ.get("SERVER_SOFTWARE", "").startswith("Development/"),
+    "debug": False,
 }
 application = tornado.wsgi.WSGIApplication([
     (r"/", HomeHandler),

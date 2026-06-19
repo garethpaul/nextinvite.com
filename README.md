@@ -78,6 +78,11 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   and restores it only through that request's retryable release path.
 - The signup body limit rejects form bodies larger than 4 KiB with a generic
   `413` before the handler reads the email argument.
+- HTTP error responses remain generic even when vendored Tornado debug behavior
+  is requested; uncaught exception details remain in server-side logs instead
+  of response bodies.
+- Runtime migration remains P0 before redeployment. This retired Python 2 App
+  Engine application is not made deployment-ready by response hardening.
 
 ## Datastore And Local Development
 
@@ -180,6 +185,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
 - See `docs/plans/2026-06-10-signup-form-submit-guard.md` for the signup form
   submit guardrail.
 - See `docs/plans/2026-06-10-ci-baseline.md` for the lightweight CI baseline.
+- See `docs/plans/2026-06-18-debug-trace-response-hardening.md` for the generic
+  error-response and server-side logging contract.
 - See `SECURITY.md` for vulnerability reporting and safe research guidance.
 - See `VISION.md` for project direction and contribution guardrails.
 
