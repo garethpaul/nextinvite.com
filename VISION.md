@@ -33,6 +33,7 @@ Priority:
 - Keep dependency-free signup JavaScript in place for the invite form
 - Keep the signup form submit guard on the dependency-free invite request path
 - Keep the signup in-flight guard around asynchronous form submissions
+- Keep the signup setup failure release around synchronous XHR construction and send
 - Keep the signup body limit before signup argument access
 - Keep `make lint`, `make test`, `make build`, and `make check` on the
   SDK-free static baseline

@@ -42,6 +42,7 @@ CHECKOUT_CREDENTIAL_PLAN_PATH = "docs/plans/2026-06-12-checkout-credential-bound
 DATASTORE_LOCAL_DEVELOPMENT_PLAN_PATH = "docs/plans/2026-06-13-datastore-local-development.md"
 LOCATION_INDEPENDENT_MAKE_PLAN_PATH = "docs/plans/2026-06-13-location-independent-make.md"
 SIGNUP_IN_FLIGHT_PLAN_PATH = "docs/plans/2026-06-15-signup-in-flight-guard.md"
+SIGNUP_SETUP_FAILURE_PLAN_PATH = "docs/plans/2026-06-15-signup-setup-failure-release.md"
 
 
 def read(relative_path):
@@ -153,6 +154,7 @@ def main():
         CHECKOUT_CREDENTIAL_PLAN_PATH,
         LOCATION_INDEPENDENT_MAKE_PLAN_PATH,
         SIGNUP_IN_FLIGHT_PLAN_PATH,
+        SIGNUP_SETUP_FAILURE_PLAN_PATH,
         "scripts/check-baseline.py",
     ]
     for path in required:
@@ -227,14 +229,22 @@ def main():
     in_flight_guard_index = request_invite.find("if (invite_request_in_flight)")
     in_flight_start_index = request_invite.find("invite_request_in_flight = true")
     request_create_index = request_invite.find("new XMLHttpRequest()")
+    setup_try_index = request_invite.find("try {")
     completion_index = request_invite.find("if (request.readyState !== 4)")
     success_index = request_invite.find("if (request.status >= 200 && request.status < 300)")
     failure_release_index = request_invite.find("invite_request_in_flight = false")
+    request_send_index = request_invite.find("request.send(")
+    setup_catch_index = request_invite.find("} catch (error)")
+    setup_release_index = request_invite.find("invite_request_in_flight = false", setup_catch_index)
+    setup_message_index = request_invite.find("set_text('signup', 'Please enter a valid email address.')", setup_catch_index)
     require("var invite_request_in_flight = false;" in template and
             0 <= in_flight_guard_index < in_flight_start_index < request_create_index,
             "signup JavaScript must reject overlapping requests before XHR setup", failures)
     require(0 <= completion_index < success_index < failure_release_index,
             "signup JavaScript must release request ownership only after completed failures", failures)
+    require(0 <= in_flight_start_index < setup_try_index < request_create_index and
+            0 <= request_send_index < setup_catch_index < setup_release_index < setup_message_index,
+            "signup JavaScript must release request ownership before generic setup-failure feedback", failures)
 
     style = read("next/static/style.css")
     require("http://s3.amazonaws.com" not in style, "background asset URL must use HTTPS", failures)
@@ -435,6 +445,16 @@ def main():
             "external directory" in signup_in_flight_verification and
             not re.search(r"(?i)\b(?:pending|todo|tbd|not run)\b", signup_in_flight_verification),
             "signup in-flight guard plan must record completed verification", failures)
+    signup_setup_failure_plan = read(SIGNUP_SETUP_FAILURE_PLAN_PATH)
+    signup_setup_failure_verification = markdown_section(
+        signup_setup_failure_plan, "Verification Completed"
+    )
+    require("status: completed" in signup_setup_failure_plan.lower() and
+            "All four Make gates passed" in signup_setup_failure_verification and
+            "Six isolated hostile mutations were rejected" in signup_setup_failure_verification and
+            "external directory" in signup_setup_failure_verification and
+            not re.search(r"(?i)\b(?:pending|todo|tbd|not run)\b", signup_setup_failure_verification),
+            "signup setup failure release plan must record completed verification", failures)
     idempotent_signup_plan = read(IDEMPOTENT_SIGNUP_PLAN_PATH) if (ROOT / IDEMPOTENT_SIGNUP_PLAN_PATH).is_file() else ""
     require("status: completed" in idempotent_signup_plan and "make check" in idempotent_signup_plan,
             "idempotent signup key plan must record status and verification", failures)
