@@ -2,6 +2,8 @@
 
 ## 2026-06-16
 
+- Added signup request ownership so duplicate or delayed terminal XHR events
+  cannot release a newer submission's in-flight lock.
 - Added signup network failure release so transport errors and browser aborts
   restore the shared generic retry path instead of leaving the form locked.
 

@@ -37,6 +37,7 @@ Priority:
 - Keep the signup setup failure release around synchronous XHR construction and send
 - Keep retryable signup feedback separate from terminal success replacement
 - Keep the signup network failure release on every terminal XHR failure path
+- Keep signup request ownership bound to the active XHR across terminal events
 - Keep the signup body limit before signup argument access
 - Keep `make lint`, `make test`, `make build`, and `make check` on the
   SDK-free static baseline
