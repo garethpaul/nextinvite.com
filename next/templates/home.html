@@ -18,7 +18,7 @@
 			</td>
 			{% raw xsrf_form_html() %}
 			<td>
-				<button type='submit' class='BigButton BlueButton'><strong>Request Invitation</strong><span></span></button>
+				<button type='submit' id='invite-submit' class='BigButton BlueButton'><strong>Request Invitation</strong><span></span></button>
 			</td>
 		</tr>
 		</table>
@@ -64,6 +64,7 @@ function release_signup_for_retry(request) {
 	    }
 	    active_invite_request = null;
 	    invite_request_in_flight = false;
+	    document.getElementById('invite-submit').disabled = false;
 	    show_signup_failure();
 }
 
@@ -85,6 +86,7 @@ function request_invite(event){
 	    try {
 	        request = new XMLHttpRequest();
 	        active_invite_request = request;
+	        document.getElementById('invite-submit').disabled = true;
 	        request.open('POST', '/signup', true);
 	        request.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
 	        request.timeout = signup_request_timeout_ms;

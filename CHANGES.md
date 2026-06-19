@@ -1,5 +1,11 @@
 # Changes
 
+## 2026-06-17
+
+- Added a request-owned signup submit busy state so accepted requests disable
+  the semantic control and retryable terminal paths restore it without allowing
+  stale callbacks to affect newer submissions.
+
 ## 2026-06-16
 
 - Added signup request ownership so duplicate or delayed terminal XHR events

@@ -79,6 +79,10 @@ color: white;
 text-shadow: 0 -1px rgba(34, 25, 25, 0.3);
 text-decoration: none;
 }
+.BigButton:disabled {
+cursor: wait;
+opacity: 0.6;
+}
 #Welcome {
 width: 100%;
 margin-top: 55px;
