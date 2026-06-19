@@ -35,6 +35,7 @@ TOP_LEVEL_DOMAIN_PLAN_PATH = "docs/plans/2026-06-09-signup-top-level-domain-vali
 MAKE_GATE_PLAN_PATH = "docs/plans/2026-06-09-make-gate-aliases.md"
 SIGNUP_JS_PLAN_PATH = "docs/plans/2026-06-09-dependency-free-signup-javascript.md"
 SIGNUP_FORM_SUBMIT_PLAN_PATH = "docs/plans/2026-06-10-signup-form-submit-guard.md"
+CI_PLAN_PATH = "docs/plans/2026-06-10-ci-baseline.md"
 IDEMPOTENT_SIGNUP_PLAN_PATH = "docs/plans/2026-06-10-idempotent-signup-key.md"
 HOSTED_VALIDATION_PLAN_PATH = "docs/plans/2026-06-10-hosted-static-validation.md"
 SIGNUP_BODY_LIMIT_PLAN_PATH = "docs/plans/2026-06-12-signup-body-limit.md"
@@ -135,6 +136,7 @@ def main():
     failures = []
     required = [
         ".gitignore",
+        ".github/CODEOWNERS",
         ".github/workflows/check.yml",
         "CHANGES.md",
         "Makefile",
@@ -155,6 +157,7 @@ def main():
         MAKE_GATE_PLAN_PATH,
         SIGNUP_JS_PLAN_PATH,
         SIGNUP_FORM_SUBMIT_PLAN_PATH,
+        CI_PLAN_PATH,
         IDEMPOTENT_SIGNUP_PLAN_PATH,
         HOSTED_VALIDATION_PLAN_PATH,
         SIGNUP_BODY_LIMIT_PLAN_PATH,
@@ -456,8 +459,8 @@ def main():
     ]),
             "location-independent Make plan must record completed root, external, and mutation verification",
             failures)
-    for phrase in ["make lint", "make test", "make build", "make check", "datastore", "private user data"]:
-        require(phrase in docs.lower(), f"docs must mention {phrase}", failures)
+    for phrase in ["make lint", "make test", "make build", "make check", "GitHub Actions", "datastore", "private user data"]:
+        require(phrase.lower() in docs.lower(), f"docs must mention {phrase}", failures)
     require("email dot validation" in docs.lower(),
             "docs must mention email dot validation", failures)
     require("domain label validation" in docs.lower(),
@@ -587,6 +590,9 @@ def main():
     signup_submit_plan = read(SIGNUP_FORM_SUBMIT_PLAN_PATH) if (ROOT / SIGNUP_FORM_SUBMIT_PLAN_PATH).is_file() else ""
     require("status: completed" in signup_submit_plan and "make check" in signup_submit_plan,
             "signup form submit guard plan must record status and verification", failures)
+    ci_plan = read(CI_PLAN_PATH) if (ROOT / CI_PLAN_PATH).is_file() else ""
+    require("status: completed" in ci_plan and "scripts/check-baseline.py" in ci_plan,
+            "CI baseline plan must record status and active checker", failures)
     signup_in_flight_plan = read(SIGNUP_IN_FLIGHT_PLAN_PATH)
     signup_in_flight_verification = markdown_section(
         signup_in_flight_plan, "Verification Completed"
@@ -724,6 +730,7 @@ def main():
         *sorted((ROOT / ".github/workflows").glob("*.yml")),
         *sorted((ROOT / ".github/workflows").glob("*.yaml")),
     ]
+    codeowners = read(".github/CODEOWNERS")
     require("status: completed" in hosted_plan and "make check" in hosted_plan,
             "hosted static validation plan must record status and verification", failures)
     for expected in [
@@ -732,11 +739,15 @@ def main():
         "runs-on: ubuntu-24.04",
         "timeout-minutes: 10",
         "actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10",
+        "persist-credentials: false",
         "actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405",
         'python-version: "3.12"',
         "run: make check",
     ]:
         require(expected in workflow, f"Check workflow must keep {expected}", failures)
+    workflow_files = sorted(str(path.relative_to(ROOT)) for path in (ROOT / ".github/workflows").rglob("*") if path.is_file())
+    require(workflow_files == [".github/workflows/check.yml"], "check.yml must be the repository's only hosted workflow", failures)
+    require(codeowners.strip() == "* @garethpaul", "CODEOWNERS must assign the repository to @garethpaul", failures)
 
     checkout_action = (
         "actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10"

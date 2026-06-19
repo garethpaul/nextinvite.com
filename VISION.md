@@ -43,6 +43,7 @@ Priority:
 - Keep the signup body limit before signup argument access
 - Keep `make lint`, `make test`, `make build`, and `make check` on the
   SDK-free static baseline
+- Keep GitHub Actions running the SDK-free `make check` baseline
 - Keep that dependency-free baseline pinned, read-only, and credential-free in
   hosted Linux CI
 - Keep the `SignUp` entity contract explicit: normalized plaintext email,
@@ -78,6 +79,7 @@ Contribution rules:
 - Preserve idempotent signup key generation when changing datastore writes.
 - Run `make lint`, `make test`, `make build`, and `make check` before pushing
   route, template, or validation changes.
+  GitHub Actions should run the same SDK-free baseline for pushed changes.
 - Preserve license and provenance for vendored dependencies.
 
 ## Security And Privacy

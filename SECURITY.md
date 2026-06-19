@@ -37,7 +37,8 @@ Helpful reports include:
 - No primary dependency manifest was detected in the repository root. If dependencies are added later, include a manifest and prefer reproducible installation instructions.
 - Run `make lint`, `make test`, `make build`, and `make check` after changing
   signup routes, templates, App Engine config, vendored dependency boundaries,
-  or security docs.
+  or security docs. GitHub Actions should run the same SDK-free baseline on
+  pushes and pull requests.
 - The pinned Linux workflow uses a read-only, credential-free checkout and runs
   only dependency-free local checks without App Engine deployment, datastore
   access, external service calls, or persisted repository credentials.
