@@ -44,6 +44,7 @@ LOCATION_INDEPENDENT_MAKE_PLAN_PATH = "docs/plans/2026-06-13-location-independen
 SIGNUP_IN_FLIGHT_PLAN_PATH = "docs/plans/2026-06-15-signup-in-flight-guard.md"
 SIGNUP_SETUP_FAILURE_PLAN_PATH = "docs/plans/2026-06-15-signup-setup-failure-release.md"
 SIGNUP_TIMEOUT_PLAN_PATH = "docs/plans/2026-06-15-signup-timeout-release.md"
+RETRYABLE_SIGNUP_FEEDBACK_PLAN_PATH = "docs/plans/2026-06-15-retryable-signup-failure-feedback.md"
 
 
 def read(relative_path):
@@ -156,6 +157,8 @@ def main():
         LOCATION_INDEPENDENT_MAKE_PLAN_PATH,
         SIGNUP_IN_FLIGHT_PLAN_PATH,
         SIGNUP_SETUP_FAILURE_PLAN_PATH,
+        SIGNUP_TIMEOUT_PLAN_PATH,
+        RETRYABLE_SIGNUP_FEEDBACK_PLAN_PATH,
         "scripts/check-baseline.py",
     ]
     for path in required:
@@ -226,9 +229,22 @@ def main():
             "signup JavaScript must submit form-encoded data", failures)
     require("textContent" in template and ".html(" not in template,
             "signup JavaScript must handle responses without HTML injection", failures)
+    form_end_index = template.find("</form>")
+    feedback_markup_index = template.find("id='signup-feedback'")
+    signup_container_end_index = template.find("</div>", feedback_markup_index)
+    require("id='signup-feedback'" in template and
+            "role='alert'" in template and
+            "aria-atomic='true'" in template and
+            0 <= form_end_index < feedback_markup_index < signup_container_end_index,
+            "signup form must keep a dedicated accessible feedback region inside its container", failures)
+    failure_renderer = template.split("function show_signup_failure()", 1)[1].split("function request_invite(event)", 1)[0]
+    require("set_text('signup-feedback', 'Please enter a valid email address.')" in failure_renderer and
+            "set_text('signup'," not in failure_renderer,
+            "signup failure renderer must update only the dedicated feedback region", failures)
     request_invite = template.split("function request_invite(event)", 1)[1].split("</script>", 1)[0]
     in_flight_guard_index = request_invite.find("if (invite_request_in_flight)")
     in_flight_start_index = request_invite.find("invite_request_in_flight = true")
+    feedback_clear_index = request_invite.find("set_text('signup-feedback', '')")
     request_create_index = request_invite.find("new XMLHttpRequest()")
     request_open_index = request_invite.find("request.open('POST', '/signup', true)")
     setup_try_index = request_invite.find("try {")
@@ -236,18 +252,21 @@ def main():
     completion_index = request_invite.find("if (request.readyState !== 4)")
     success_index = request_invite.find("if (request.status >= 200 && request.status < 300)")
     failure_release_index = request_invite.find("invite_request_in_flight = false")
+    failure_message_index = request_invite.find("show_signup_failure()")
     timeout_handler_index = request_invite.find("request.ontimeout = function()")
     timeout_release_index = request_invite.find("invite_request_in_flight = false", timeout_handler_index)
-    timeout_message_index = request_invite.find("set_text('signup', 'Please enter a valid email address.')", timeout_handler_index)
+    timeout_message_index = request_invite.find("show_signup_failure()", timeout_handler_index)
     request_send_index = request_invite.find("request.send(")
     setup_catch_index = request_invite.find("} catch (error)")
     setup_release_index = request_invite.find("invite_request_in_flight = false", setup_catch_index)
-    setup_message_index = request_invite.find("set_text('signup', 'Please enter a valid email address.')", setup_catch_index)
+    setup_message_index = request_invite.find("show_signup_failure()", setup_catch_index)
     require("var invite_request_in_flight = false;" in template and
             0 <= in_flight_guard_index < in_flight_start_index < request_create_index,
             "signup JavaScript must reject overlapping requests before XHR setup", failures)
-    require(0 <= completion_index < success_index < failure_release_index,
-            "signup JavaScript must release request ownership only after completed failures", failures)
+    require(0 <= in_flight_start_index < feedback_clear_index < setup_try_index,
+            "accepted signup retries must clear stale feedback after acquiring ownership", failures)
+    require(0 <= completion_index < success_index < failure_release_index < failure_message_index < timeout_handler_index,
+            "completed signup failures must release ownership before retryable feedback", failures)
     require(0 <= in_flight_start_index < setup_try_index < request_create_index and
             0 <= request_send_index < setup_catch_index < setup_release_index < setup_message_index,
             "signup JavaScript must release request ownership before generic setup-failure feedback", failures)
@@ -256,6 +275,10 @@ def main():
             "signup JavaScript must install the finite request timeout before dispatch", failures)
     require(0 <= timeout_handler_index < timeout_release_index < timeout_message_index < request_send_index,
             "signup timeout must release request ownership before generic failure feedback", failures)
+    require("set_text('signup-feedback', 'Please enter a valid email address.')" not in request_invite and
+            "set_text('signup', 'Please enter a valid email address.')" not in request_invite and
+            "set_text('signup', \"Thank You - we will review your application" in request_invite,
+            "retryable failures must preserve the form while success remains terminal", failures)
 
     style = read("next/static/style.css")
     require("http://s3.amazonaws.com" not in style, "background asset URL must use HTTPS", failures)
@@ -329,7 +352,10 @@ def main():
         failures.append(f"server helper contracts failed: {error}")
 
     readme_source = read("README.md")
-    docs = readme_source + "\n" + read("VISION.md") + "\n" + read("SECURITY.md")
+    vision_source = read("VISION.md")
+    security_source = read("SECURITY.md")
+    changes_source = read("CHANGES.md")
+    docs = readme_source + "\n" + vision_source + "\n" + security_source
     location_independent_make_plan = read(LOCATION_INDEPENDENT_MAKE_PLAN_PATH)
     require("make -f /path/to/nextinvite.com/Makefile check" in readme_source,
             "README must document location-independent Makefile invocation", failures)
@@ -362,6 +388,15 @@ def main():
             "docs must mention the signup in-flight guard", failures)
     require("signup request timeout release" in docs.lower(),
             "docs must mention the signup request timeout release", failures)
+    guidance_sources = {
+        "README.md": readme_source,
+        "SECURITY.md": security_source,
+        "VISION.md": vision_source,
+        "CHANGES.md": changes_source,
+    }
+    for relative_path, guidance_source in guidance_sources.items():
+        require("retryable signup feedback" in guidance_source.lower(),
+                f"{relative_path} must document retryable signup feedback", failures)
     readme = " ".join(read("README.md").split())
     for phrase in [
         "`SignUp` is the only application datastore entity",
@@ -378,7 +413,7 @@ def main():
     ]:
         require(phrase in readme,
                 f"README datastore guidance must mention {phrase}", failures)
-    security = " ".join(read("SECURITY.md").split())
+    security = " ".join(security_source.split())
     for phrase in [
         "stores normalized email as plaintext private data",
         "provides retry idempotency, not encryption",
@@ -387,7 +422,7 @@ def main():
     ]:
         require(phrase in security,
                 f"security datastore guidance must mention {phrase}", failures)
-    vision = " ".join(read("VISION.md").split())
+    vision = " ".join(vision_source.split())
     for phrase in [
         "normalized plaintext email",
         "idempotency, not encryption",
@@ -396,7 +431,7 @@ def main():
     ]:
         require(phrase in vision,
                 f"vision datastore guidance must mention {phrase}", failures)
-    changes = read("CHANGES.md")
+    changes = changes_source
     require("email dot validation" in changes.lower(),
             "CHANGES must mention email dot validation", failures)
     require("domain label validation" in changes.lower(),
@@ -480,6 +515,16 @@ def main():
             "external directory" in signup_timeout_verification and
             not re.search(r"(?i)\b(?:pending|todo|tbd|not run)\b", signup_timeout_verification),
             "signup request timeout release plan must record completed verification", failures)
+    retryable_feedback_plan = read(RETRYABLE_SIGNUP_FEEDBACK_PLAN_PATH)
+    retryable_feedback_verification = markdown_section(
+        retryable_feedback_plan, "Verification Completed"
+    )
+    require("status: completed" in retryable_feedback_plan.lower() and
+            "All four Make gates passed" in retryable_feedback_verification and
+            "Nine isolated hostile mutations were rejected" in retryable_feedback_verification and
+            "external directory" in retryable_feedback_verification and
+            not re.search(r"(?i)\b(?:pending|todo|tbd|not run)\b", retryable_feedback_verification),
+            "retryable signup feedback plan must record completed verification", failures)
     idempotent_signup_plan = read(IDEMPOTENT_SIGNUP_PLAN_PATH) if (ROOT / IDEMPOTENT_SIGNUP_PLAN_PATH).is_file() else ""
     require("status: completed" in idempotent_signup_plan and "make check" in idempotent_signup_plan,
             "idempotent signup key plan must record status and verification", failures)

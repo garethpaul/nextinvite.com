@@ -65,6 +65,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   synchronous dispatch throws before a response exists.
 - The signup request timeout release restores retry after 10 seconds when a
   browser request never completes.
+- Retryable signup feedback stays in a dedicated alert region so completed,
+  timeout, and setup failures do not remove the form needed for another attempt.
 - The signup body limit rejects form bodies larger than 4 KiB with a generic
   `413` before the handler reads the email argument.
 
@@ -134,6 +136,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   and release failed attempts for retry.
 - The signup request timeout release should bound a stalled browser request to
   10 seconds and release the page-local guard before generic retry feedback.
+- Retryable signup feedback should preserve the form and clear stale errors only
+  after a new request acquires page-local ownership.
 - The signup body limit bounds application-level form handling; upstream App
   Engine or Tornado layers may still buffer request transport data.
 - Preserve idempotent signup key generation when changing datastore persistence.

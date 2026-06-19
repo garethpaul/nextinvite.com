@@ -21,9 +21,10 @@
 				<a href="#" class="BigButton BlueButton" onclick="request_invite(event); return false;"><strong>Request Invitation</strong><span></span></a>
 			</td>
 		</tr>
-	</table>
-	</form>
-</div>
+		</table>
+		</form>
+		<div id='signup-feedback' role='alert' aria-atomic='true'></div>
+	</div>
 </div>
 
 
@@ -53,6 +54,10 @@ function serialize_form(form) {
 	    return pairs.join('&');
 }
 
+function show_signup_failure() {
+	    set_text('signup-feedback', 'Please enter a valid email address.');
+}
+
 var invite_request_in_flight = false;
 var signup_request_timeout_ms = 10000;
 
@@ -64,6 +69,7 @@ function request_invite(event){
 	        return;
 	    }
 	    invite_request_in_flight = true;
+	    set_text('signup-feedback', '');
 	    try {
 	        var request = new XMLHttpRequest();
 	        request.open('POST', '/signup', true);
@@ -81,16 +87,16 @@ function request_invite(event){
 	                return;
 	            }
 	            invite_request_in_flight = false;
-	            set_text('signup', 'Please enter a valid email address.');
+	            show_signup_failure();
 	        };
 	        request.ontimeout = function() {
 	            invite_request_in_flight = false;
-	            set_text('signup', 'Please enter a valid email address.');
+	            show_signup_failure();
 	        };
 	        request.send(serialize_form(document.getElementById('inviteform')));
 	    } catch (error) {
 	        invite_request_in_flight = false;
-	        set_text('signup', 'Please enter a valid email address.');
+	        show_signup_failure();
 	    }
 }
 </script>
