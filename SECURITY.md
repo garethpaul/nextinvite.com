@@ -74,6 +74,8 @@ Helpful reports include:
   10 seconds and restore retry with generic text-only failure feedback.
 - Retryable signup feedback should remain text-only, preserve the form, and
   avoid exposing response bodies, exception details, or submitted addresses.
+- The signup network failure release should handle transport errors and browser
+  aborts through the same generic text-only retry path.
 - App Engine handlers should keep `secure: always`, and templates should not disable Tornado autoescaping.
 - Classic `dev_appserver.py` and `appcfg.py` workflows require an
   era-compatible SDK. Keep local datastore files and exports out of git, and do

@@ -1,5 +1,10 @@
 # Changes
 
+## 2026-06-16
+
+- Added signup network failure release so transport errors and browser aborts
+  restore the shared generic retry path instead of leaving the form locked.
+
 ## 2026-06-15
 
 - Added a semantic signup submit control so pointer and keyboard activation use

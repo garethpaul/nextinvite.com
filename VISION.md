@@ -36,6 +36,7 @@ Priority:
 - Keep the signup in-flight guard around asynchronous form submissions
 - Keep the signup setup failure release around synchronous XHR construction and send
 - Keep retryable signup feedback separate from terminal success replacement
+- Keep the signup network failure release on every terminal XHR failure path
 - Keep the signup body limit before signup argument access
 - Keep `make lint`, `make test`, `make build`, and `make check` on the
   SDK-free static baseline
@@ -69,6 +70,7 @@ Contribution rules:
 - Preserve dependency-free signup JavaScript when changing the invite form.
 - Preserve the signup form submit guard when changing invite form behavior.
 - Preserve the semantic signup submit control when changing invite actions.
+- Preserve the signup network failure release when changing XHR event handling.
 - Preserve the signup body limit when changing signup request handling.
 - Preserve idempotent signup key generation when changing datastore writes.
 - Run `make lint`, `make test`, `make build`, and `make check` before pushing

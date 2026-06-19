@@ -69,6 +69,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   browser request never completes.
 - Retryable signup feedback stays in a dedicated alert region so completed,
   timeout, and setup failures do not remove the form needed for another attempt.
+- The signup network failure release restores retry after transport errors or
+  browser-aborted requests without exposing diagnostics.
 - The signup body limit rejects form bodies larger than 4 KiB with a generic
   `413` before the handler reads the email argument.
 
@@ -142,6 +144,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   10 seconds and release the page-local guard before generic retry feedback.
 - Retryable signup feedback should preserve the form and clear stale errors only
   after a new request acquires page-local ownership.
+- Preserve the signup network failure release so every terminal XHR failure
+  restores the form through the shared generic-feedback path.
 - The signup body limit bounds application-level form handling; upstream App
   Engine or Tornado layers may still buffer request transport data.
 - Preserve idempotent signup key generation when changing datastore persistence.
