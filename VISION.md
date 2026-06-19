@@ -30,6 +30,7 @@ Priority:
 - Keep domain label character validation in place before datastore persistence
 - Keep local-part validation in place before datastore persistence
 - Keep top-level domain validation in place before datastore persistence
+- Keep linear email shape validation free of broad overall-address expressions
 - Keep dependency-free signup JavaScript in place for the invite form
 - Keep the signup form submit guard on the dependency-free invite request path
 - Keep the semantic signup submit control behind native form validation
@@ -42,6 +43,7 @@ Priority:
 - Keep the signup body limit before signup argument access
 - Keep `make lint`, `make test`, `make build`, and `make check` on the
   SDK-free static baseline
+- Keep GitHub Actions running the SDK-free `make check` baseline
 - Keep that dependency-free baseline pinned, read-only, and credential-free in
   hosted Linux CI
 - Keep the `SignUp` entity contract explicit: normalized plaintext email,
@@ -77,6 +79,7 @@ Contribution rules:
 - Preserve idempotent signup key generation when changing datastore writes.
 - Run `make lint`, `make test`, `make build`, and `make check` before pushing
   route, template, or validation changes.
+  GitHub Actions should run the same SDK-free baseline for pushed changes.
 - Preserve license and provenance for vendored dependencies.
 
 ## Security And Privacy

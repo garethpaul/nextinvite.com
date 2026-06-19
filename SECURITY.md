@@ -37,7 +37,8 @@ Helpful reports include:
 - No primary dependency manifest was detected in the repository root. If dependencies are added later, include a manifest and prefer reproducible installation instructions.
 - Run `make lint`, `make test`, `make build`, and `make check` after changing
   signup routes, templates, App Engine config, vendored dependency boundaries,
-  or security docs.
+  or security docs. GitHub Actions should run the same SDK-free baseline on
+  pushes and pull requests.
 - The pinned Linux workflow uses a read-only, credential-free checkout and runs
   only dependency-free local checks without App Engine deployment, datastore
   access, external service calls, or persisted repository credentials.
@@ -60,6 +61,8 @@ Helpful reports include:
   reject unsafe or non-ASCII characters before datastore persistence.
 - Top-level domain validation should reject one-character or all-numeric final
   labels before datastore persistence.
+- Linear email shape validation should require exactly one separator and a
+  dotted domain without evaluating a broad overall-address regular expression.
 - Dependency-free signup JavaScript should keep the invite form independent of
   remote jQuery while preserving XSRF form serialization.
 - The signup form submit guard should keep keyboard form submissions on the

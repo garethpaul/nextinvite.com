@@ -11,6 +11,7 @@ This README is based on the checked-in source, manifests, scripts, and repositor
 
 ## Repository Contents
 
+- `.github/workflows/check.yml` - CI baseline that runs the static Make gate
 - `next` - source or example code
 - `SECURITY.md` - security reporting and disclosure guidance
 - `VISION.md` - project direction and maintenance guardrails
@@ -110,6 +111,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   checkout's Makefile by absolute path, such as
   `make -f /path/to/nextinvite.com/Makefile check`.
 - `python3 scripts/check-baseline.py`
+- GitHub Actions runs the SDK-free `make check` gate through
+  `.github/workflows/check.yml` on pushes and pull requests.
 - Pinned `ubuntu-24.04` GitHub Actions uses a read-only, credential-free
   checkout and runs the same dependency-free baseline on Python 3.12 without
   App Engine deployment, datastore access, or external calls.
@@ -136,6 +139,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   parts before persistence.
 - Top-level domain validation keeps final domain labels to plausible public
   email suffixes before persistence.
+- Linear email shape validation requires one separator and a dotted domain
+  without a broad overall-address regular expression.
 - Dependency-free signup JavaScript keeps the invite flow working without a
   remote script dependency.
 - The signup form submit guard keeps keyboard submissions on the same XSRF-aware
@@ -174,6 +179,7 @@ When the required SDK or runtime is unavailable, use static checks and source re
   dependency-free signup JavaScript guardrail.
 - See `docs/plans/2026-06-10-signup-form-submit-guard.md` for the signup form
   submit guardrail.
+- See `docs/plans/2026-06-10-ci-baseline.md` for the lightweight CI baseline.
 - See `SECURITY.md` for vulnerability reporting and safe research guidance.
 - See `VISION.md` for project direction and contribution guardrails.
 

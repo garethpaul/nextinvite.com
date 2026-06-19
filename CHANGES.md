@@ -1,5 +1,10 @@
 # Changes
 
+## 2026-06-18
+
+- Replaced the broad overall-address expression with linear email shape validation
+  for one separator and a dotted domain.
+
 ## 2026-06-17
 
 - Added a request-owned signup submit busy state so accepted requests disable
@@ -44,6 +49,7 @@
 
 - Added a signup body limit that rejects more than 4 KiB with a generic `413`
   before email argument access.
+- Added GitHub Actions CI that runs the SDK-free `make check` baseline.
 - Added idempotent signup keys using a prefixed SHA-256 digest of normalized
   email addresses to avoid duplicate retry entities and plaintext datastore keys.
 - Added pinned, read-only Python 3.12 hosted validation for the dependency-free

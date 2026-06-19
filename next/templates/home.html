@@ -11,11 +11,12 @@
 <div id='signup'>
 	<form action='/signup' id='inviteform' method='post' onsubmit="request_invite(event); return false;">
 	
-	<table>
-		<tr>
-			<td>
-				<input type='email' id='email' name='email' placeholder='Email Address' maxlength='254' required>
-			</td>
+		<table>
+			<tr>
+				<td>
+					<label for='email' class='VisuallyHidden'>Email address</label>
+					<input type='email' id='email' name='email' placeholder='Email Address' maxlength='254' autocomplete='email' spellcheck='false' required>
+				</td>
 			{% raw xsrf_form_html() %}
 			<td>
 				<button type='submit' id='invite-submit' class='BigButton BlueButton'><strong>Request Invitation</strong><span></span></button>

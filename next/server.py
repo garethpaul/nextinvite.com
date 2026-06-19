@@ -17,7 +17,6 @@ from google.appengine.ext import db
 import base
 
 
-EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 LOCAL_PART_RE = re.compile(r"^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+$")
 DOMAIN_LABEL_RE = re.compile(r"^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$")
 MAX_EMAIL_LENGTH = 254
@@ -33,6 +32,15 @@ def signup_key_name(email):
     normalized_email = normalize_email(email)
     digest = hashlib.sha256(normalized_email.encode("utf-8")).hexdigest()
     return "signup-" + digest
+
+
+def has_valid_email_shape(email):
+    parts = email.split("@")
+    if len(parts) != 2:
+        return False
+
+    local, domain = parts
+    return bool(local and domain and "." in domain)
 
 
 def has_valid_email_dots(email):
@@ -96,7 +104,7 @@ def is_valid_email(email):
     return bool(
         email
         and len(email) <= MAX_EMAIL_LENGTH
-        and EMAIL_RE.match(email)
+        and has_valid_email_shape(email)
         and has_valid_local_part(email)
         and has_valid_email_dots(email)
         and has_valid_domain_labels(email)

@@ -35,6 +35,7 @@ TOP_LEVEL_DOMAIN_PLAN_PATH = "docs/plans/2026-06-09-signup-top-level-domain-vali
 MAKE_GATE_PLAN_PATH = "docs/plans/2026-06-09-make-gate-aliases.md"
 SIGNUP_JS_PLAN_PATH = "docs/plans/2026-06-09-dependency-free-signup-javascript.md"
 SIGNUP_FORM_SUBMIT_PLAN_PATH = "docs/plans/2026-06-10-signup-form-submit-guard.md"
+CI_PLAN_PATH = "docs/plans/2026-06-10-ci-baseline.md"
 IDEMPOTENT_SIGNUP_PLAN_PATH = "docs/plans/2026-06-10-idempotent-signup-key.md"
 HOSTED_VALIDATION_PLAN_PATH = "docs/plans/2026-06-10-hosted-static-validation.md"
 SIGNUP_BODY_LIMIT_PLAN_PATH = "docs/plans/2026-06-12-signup-body-limit.md"
@@ -49,6 +50,7 @@ SEMANTIC_SIGNUP_SUBMIT_PLAN_PATH = "docs/plans/2026-06-15-semantic-signup-submit
 SIGNUP_NETWORK_FAILURE_PLAN_PATH = "docs/plans/2026-06-16-signup-network-failure-release.md"
 SIGNUP_REQUEST_OWNERSHIP_PLAN_PATH = "docs/plans/2026-06-16-signup-request-ownership.md"
 SIGNUP_SUBMIT_BUSY_STATE_PLAN_PATH = "docs/plans/2026-06-17-signup-submit-busy-state.md"
+LINEAR_EMAIL_SHAPE_PLAN_PATH = "docs/plans/2026-06-18-linear-email-shape-validation.md"
 
 
 def read(relative_path):
@@ -134,6 +136,7 @@ def main():
     failures = []
     required = [
         ".gitignore",
+        ".github/CODEOWNERS",
         ".github/workflows/check.yml",
         "CHANGES.md",
         "Makefile",
@@ -154,21 +157,30 @@ def main():
         MAKE_GATE_PLAN_PATH,
         SIGNUP_JS_PLAN_PATH,
         SIGNUP_FORM_SUBMIT_PLAN_PATH,
+        CI_PLAN_PATH,
         IDEMPOTENT_SIGNUP_PLAN_PATH,
         HOSTED_VALIDATION_PLAN_PATH,
         SIGNUP_BODY_LIMIT_PLAN_PATH,
         CHECKOUT_CREDENTIAL_PLAN_PATH,
+        DATASTORE_LOCAL_DEVELOPMENT_PLAN_PATH,
         LOCATION_INDEPENDENT_MAKE_PLAN_PATH,
         SIGNUP_IN_FLIGHT_PLAN_PATH,
         SIGNUP_SETUP_FAILURE_PLAN_PATH,
         SIGNUP_TIMEOUT_PLAN_PATH,
         RETRYABLE_SIGNUP_FEEDBACK_PLAN_PATH,
+        SEMANTIC_SIGNUP_SUBMIT_PLAN_PATH,
         SIGNUP_NETWORK_FAILURE_PLAN_PATH,
         SIGNUP_REQUEST_OWNERSHIP_PLAN_PATH,
+        SIGNUP_SUBMIT_BUSY_STATE_PLAN_PATH,
+        LINEAR_EMAIL_SHAPE_PLAN_PATH,
         "scripts/check-baseline.py",
     ]
     for path in required:
         require((ROOT / path).is_file(), f"required file missing: {path}", failures)
+    for path in sorted(
+        value for name, value in globals().items() if name.endswith("_PLAN_PATH")
+    ):
+        require(path in required, f"plan path missing from required list: {path}", failures)
 
     for path in ["next/server.py", "next/base.py", "scripts/check-baseline.py"]:
         try:
@@ -177,8 +189,23 @@ def main():
             failures.append(f"{path} must parse as Python: {error}")
 
     server = read("next/server.py")
-    require("EMAIL_RE" in server and "normalize_email" in server and "is_valid_email" in server,
+    require("EMAIL_RE" not in server and "normalize_email" in server and "is_valid_email" in server,
             "signup route must validate and normalize email addresses", failures)
+    email_shape = server.split("def has_valid_email_shape(email):", 1)[1].split(
+        "def has_valid_email_dots", 1
+    )[0]
+    email_validation = server.split("def is_valid_email(email):", 1)[1].split(
+        "class SignUp", 1
+    )[0]
+    require(
+        'parts = email.split("@")' in email_shape
+        and "if len(parts) != 2:" in email_shape
+        and "local, domain = parts" in email_shape
+        and 'return bool(local and domain and "." in domain)' in email_shape
+        and "and has_valid_email_shape(email)" in email_validation,
+        "signup route must use linear overall email shape validation",
+        failures,
+    )
     require("def signup_key_name(email)" in server and
             'hashlib.sha256(normalized_email.encode("utf-8")).hexdigest()' in server and
             "SignUp(key_name=signup_key_name(email))" in server,
@@ -223,6 +250,10 @@ def main():
             "signup form must use required email input", failures)
     require("maxlength='254'" in template,
             "signup form must expose the server email length limit", failures)
+    require("for='email'" in template and ">Email address<" in template,
+            "signup email input must have an associated label", failures)
+    require("autocomplete='email'" in template and "spellcheck='false'" in template,
+            "signup email input must expose email autocomplete and disable spellcheck", failures)
     submit_control = template.split("<td>", 2)[-1].split("</td>", 1)[0]
     require("<button type='submit' id='invite-submit' class='BigButton BlueButton'>" in submit_control and
             "<strong>Request Invitation</strong>" in submit_control and
@@ -356,6 +387,16 @@ def main():
         require(module.normalize_email(" USER@Example.COM ") == "user@example.com",
                 "normalize_email must trim and lowercase", failures)
         require(module.is_valid_email("user@example.com"), "valid email must be accepted", failures)
+        require(module.has_valid_email_shape("user@example.com"),
+                "valid email shape must be accepted", failures)
+        require(not module.has_valid_email_shape("user@@example.com"),
+                "multiple email separators must be rejected", failures)
+        require(not module.has_valid_email_shape("@example.com"),
+                "blank email local part must be rejected", failures)
+        require(not module.has_valid_email_shape("user@"),
+                "blank email domain must be rejected", failures)
+        require(not module.has_valid_email_shape("user@example"),
+                "email domain without a dot must be rejected", failures)
         require(module.is_valid_email("user+tag@example.com"),
                 "plus-tagged local part must be accepted", failures)
         valid_254_email = ("a" * 64) + "@" + ("b" * 63) + "." + ("c" * 63) + "." + ("d" * 61)
@@ -395,6 +436,10 @@ def main():
                 "single-character top-level domain must be rejected", failures)
         require(not module.is_valid_email("user@example.123"),
                 "all-numeric top-level domain must be rejected", failures)
+        require(not module.is_valid_email("user@@example.com"),
+                "email with multiple separators must be rejected", failures)
+        require(not module.is_valid_email("user@example"),
+                "email without a dotted domain must be rejected", failures)
         require(not module.is_valid_email("not-an-email"), "invalid email must be rejected", failures)
     except Exception as error:
         failures.append(f"server helper contracts failed: {error}")
@@ -414,8 +459,8 @@ def main():
     ]),
             "location-independent Make plan must record completed root, external, and mutation verification",
             failures)
-    for phrase in ["make lint", "make test", "make build", "make check", "datastore", "private user data"]:
-        require(phrase in docs.lower(), f"docs must mention {phrase}", failures)
+    for phrase in ["make lint", "make test", "make build", "make check", "GitHub Actions", "datastore", "private user data"]:
+        require(phrase.lower() in docs.lower(), f"docs must mention {phrase}", failures)
     require("email dot validation" in docs.lower(),
             "docs must mention email dot validation", failures)
     require("domain label validation" in docs.lower(),
@@ -453,6 +498,8 @@ def main():
                 f"{relative_path} must document signup request ownership", failures)
         require("signup submit busy state" in guidance_source.lower(),
                 f"{relative_path} must document signup submit busy state", failures)
+        require("linear email shape validation" in guidance_source.lower(),
+                f"{relative_path} must document linear email shape validation", failures)
     readme = " ".join(read("README.md").split())
     for phrase in [
         "`SignUp` is the only application datastore entity",
@@ -543,6 +590,9 @@ def main():
     signup_submit_plan = read(SIGNUP_FORM_SUBMIT_PLAN_PATH) if (ROOT / SIGNUP_FORM_SUBMIT_PLAN_PATH).is_file() else ""
     require("status: completed" in signup_submit_plan and "make check" in signup_submit_plan,
             "signup form submit guard plan must record status and verification", failures)
+    ci_plan = read(CI_PLAN_PATH) if (ROOT / CI_PLAN_PATH).is_file() else ""
+    require("status: completed" in ci_plan and "scripts/check-baseline.py" in ci_plan,
+            "CI baseline plan must record status and active checker", failures)
     signup_in_flight_plan = read(SIGNUP_IN_FLIGHT_PLAN_PATH)
     signup_in_flight_verification = markdown_section(
         signup_in_flight_plan, "Verification Completed"
@@ -624,6 +674,17 @@ def main():
             "browser" in submit_busy_state_verification and
             not re.search(r"(?i)\b(?:pending|todo|tbd|not run)\b", submit_busy_state_verification),
             "signup submit busy state plan must record completed verification", failures)
+    linear_email_shape_plan = read(LINEAR_EMAIL_SHAPE_PLAN_PATH)
+    linear_email_shape_verification = markdown_section(
+        linear_email_shape_plan, "Verification Completed"
+    )
+    require("status: completed" in linear_email_shape_plan.lower() and
+            "All four Make gates passed" in linear_email_shape_verification and
+            "Eight isolated hostile mutations were rejected" in linear_email_shape_verification and
+            "external directory" in linear_email_shape_verification and
+            "CodeQL" in linear_email_shape_verification and
+            not re.search(r"(?i)\b(?:pending|todo|tbd|not run)\b", linear_email_shape_verification),
+            "linear email shape validation plan must record completed verification", failures)
     idempotent_signup_plan = read(IDEMPOTENT_SIGNUP_PLAN_PATH) if (ROOT / IDEMPOTENT_SIGNUP_PLAN_PATH).is_file() else ""
     require("status: completed" in idempotent_signup_plan and "make check" in idempotent_signup_plan,
             "idempotent signup key plan must record status and verification", failures)
@@ -669,6 +730,7 @@ def main():
         *sorted((ROOT / ".github/workflows").glob("*.yml")),
         *sorted((ROOT / ".github/workflows").glob("*.yaml")),
     ]
+    codeowners = read(".github/CODEOWNERS")
     require("status: completed" in hosted_plan and "make check" in hosted_plan,
             "hosted static validation plan must record status and verification", failures)
     for expected in [
@@ -677,11 +739,15 @@ def main():
         "runs-on: ubuntu-24.04",
         "timeout-minutes: 10",
         "actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10",
+        "persist-credentials: false",
         "actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405",
         'python-version: "3.12"',
         "run: make check",
     ]:
         require(expected in workflow, f"Check workflow must keep {expected}", failures)
+    workflow_files = sorted(str(path.relative_to(ROOT)) for path in (ROOT / ".github/workflows").rglob("*") if path.is_file())
+    require(workflow_files == [".github/workflows/check.yml"], "check.yml must be the repository's only hosted workflow", failures)
+    require(codeowners.strip() == "* @garethpaul", "CODEOWNERS must assign the repository to @garethpaul", failures)
 
     checkout_action = (
         "actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10"
