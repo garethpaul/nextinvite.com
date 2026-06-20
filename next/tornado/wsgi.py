@@ -35,19 +35,11 @@ import httplib
 import logging
 import sys
 import time
-import tornado
 import urllib
 
-from tornado import escape
 from tornado import httputil
 from tornado import web
 from tornado.escape import native_str, utf8
-from tornado.util import b
-
-try:
-    from io import BytesIO  # python 3
-except ImportError:
-    from cStringIO import StringIO as BytesIO  # python 2
 
 class WSGIApplication(web.Application):
     """A WSGI equivalent of `tornado.web.Application`.
@@ -183,114 +175,3 @@ class HTTPRequest(object):
             return time.time() - self._start_time
         else:
             return self._finish_time - self._start_time
-
-
-class WSGIContainer(object):
-    r"""Makes a WSGI-compatible function runnable on Tornado's HTTP server.
-
-    Wrap a WSGI function in a WSGIContainer and pass it to HTTPServer to
-    run it. For example::
-
-        def simple_app(environ, start_response):
-            status = "200 OK"
-            response_headers = [("Content-type", "text/plain")]
-            start_response(status, response_headers)
-            return ["Hello world!\n"]
-
-        container = tornado.wsgi.WSGIContainer(simple_app)
-        http_server = tornado.httpserver.HTTPServer(container)
-        http_server.listen(8888)
-        tornado.ioloop.IOLoop.instance().start()
-
-    This class is intended to let other frameworks (Django, web.py, etc)
-    run on the Tornado HTTP server and I/O loop.
-
-    The `tornado.web.FallbackHandler` class is often useful for mixing
-    Tornado and WSGI apps in the same server.  See
-    https://github.com/bdarnell/django-tornado-demo for a complete example.
-    """
-    def __init__(self, wsgi_application):
-        self.wsgi_application = wsgi_application
-
-    def __call__(self, request):
-        data = {}
-        response = []
-        def start_response(status, response_headers, exc_info=None):
-            data["status"] = status
-            data["headers"] = response_headers
-            return response.append
-        app_response = self.wsgi_application(
-            WSGIContainer.environ(request), start_response)
-        response.extend(app_response)
-        body = b("").join(response)
-        if hasattr(app_response, "close"):
-            app_response.close()
-        if not data: raise Exception("WSGI app did not call start_response")
-
-        status_code = int(data["status"].split()[0])
-        headers = data["headers"]
-        header_set = set(k.lower() for (k,v) in headers)
-        body = escape.utf8(body)
-        if "content-length" not in header_set:
-            headers.append(("Content-Length", str(len(body))))
-        if "content-type" not in header_set:
-            headers.append(("Content-Type", "text/html; charset=UTF-8"))
-        if "server" not in header_set:
-            headers.append(("Server", "TornadoServer/%s" % tornado.version))
-
-        parts = [escape.utf8("HTTP/1.1 " + data["status"] + "\r\n")]
-        for key, value in headers:
-            parts.append(escape.utf8(key) + b(": ") + escape.utf8(value) + b("\r\n"))
-        parts.append(b("\r\n"))
-        parts.append(body)
-        request.write(b("").join(parts))
-        request.finish()
-        self._log(status_code, request)
-
-    @staticmethod
-    def environ(request):
-        """Converts a `tornado.httpserver.HTTPRequest` to a WSGI environment.
-        """
-        hostport = request.host.split(":")
-        if len(hostport) == 2:
-            host = hostport[0]
-            port = int(hostport[1])
-        else:
-            host = request.host
-            port = 443 if request.protocol == "https" else 80
-        environ = {
-            "REQUEST_METHOD": request.method,
-            "SCRIPT_NAME": "",
-            "PATH_INFO": urllib.unquote(request.path),
-            "QUERY_STRING": request.query,
-            "REMOTE_ADDR": request.remote_ip,
-            "SERVER_NAME": host,
-            "SERVER_PORT": str(port),
-            "SERVER_PROTOCOL": request.version,
-            "wsgi.version": (1, 0),
-            "wsgi.url_scheme": request.protocol,
-            "wsgi.input": BytesIO(escape.utf8(request.body)),
-            "wsgi.errors": sys.stderr,
-            "wsgi.multithread": False,
-            "wsgi.multiprocess": True,
-            "wsgi.run_once": False,
-        }
-        if "Content-Type" in request.headers:
-            environ["CONTENT_TYPE"] = request.headers.pop("Content-Type")
-        if "Content-Length" in request.headers:
-            environ["CONTENT_LENGTH"] = request.headers.pop("Content-Length")
-        for key, value in request.headers.iteritems():
-            environ["HTTP_" + key.replace("-", "_").upper()] = value
-        return environ
-
-    def _log(self, status_code, request):
-        if status_code < 400:
-            log_method = logging.info
-        elif status_code < 500:
-            log_method = logging.warning
-        else:
-            log_method = logging.error
-        request_time = 1000.0 * request.request_time()
-        summary = request.method + " " + request.uri + " (" + \
-            request.remote_ip + ")"
-        log_method("%d %s %.2fms", status_code, summary, request_time)

@@ -25,7 +25,10 @@
 
 ## Testing guidance
 
-- Test-related files detected: `next/tornado/test/`, `next/tornado/test/auth_test.py`, `next/tornado/test/curl_httpclient_test.py`, `next/tornado/test/escape_test.py`, `next/tornado/test/gen_test.py`, `next/tornado/test/httpclient_test.py`, `next/tornado/test/httpserver_test.py`, `next/tornado/test/httputil_test.py`, `next/tornado/test/import_test.py`, `next/tornado/test/ioloop_test.py`
+- Maintained tests are `tests/test_debug_trace_policy.py` and
+  `tests/test_vendored_tornado_surface.py`.
+- Keep the vendored package limited to the documented WSGI-only Tornado subset;
+  do not restore unused upstream modules or its non-executed test suite.
 - Start with the narrowest relevant test or Make target, then run `make check` before handing off if the change is not documentation-only.
 - Keep README verification notes in sync when commands, fixtures, or supported toolchains change.
 

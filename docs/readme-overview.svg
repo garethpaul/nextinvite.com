@@ -14,23 +14,23 @@
 
   <rect x="76" y="286" width="316" height="276" rx="14" fill="#eff6ff" stroke="#bfdbfe"/>
   <text x="102" y="328" font-size="24" font-weight="700" fill="#1d4ed8">Code Shape</text>
-  <text x="102" y="370" font-size="19" fill="#1f2937">Languages: Python (54), C (1)</text>
+  <text x="102" y="370" font-size="19" fill="#1f2937">Legacy Python 2 / App Engine</text>
   <text x="102" y="430" font-size="19" fill="#1f2937">Source: next</text>
   <text x="102" y="490" font-size="19" fill="#1f2937">Manifests: None detected</text>
 
   <rect x="442" y="286" width="316" height="276" rx="14" fill="#ecfdf5" stroke="#bbf7d0"/>
   <text x="468" y="328" font-size="24" font-weight="700" fill="#047857">How It Runs</text>
-  <text x="468" y="370" font-size="19" fill="#1f2937">Entry points: None detected</text>
+  <text x="468" y="370" font-size="19" fill="#1f2937">Entry: next/server.py</text>
   <text x="468" y="466" font-size="19" fill="#1f2937">Tests:</text>
-<text x="468" y="490" font-size="19" fill="#1f2937">next/tornado/test/__init__.py,</text>
-<text x="468" y="514" font-size="19" fill="#1f2937">next/tornado/test/auth_test.py, n</text>
+<text x="468" y="490" font-size="19" fill="#1f2937">maintained Python 3 contracts</text>
+<text x="468" y="514" font-size="19" fill="#1f2937">WSGI-only Tornado subset</text>
 
   <rect x="808" y="286" width="316" height="276" rx="14" fill="#fff7ed" stroke="#fed7aa"/>
   <text x="834" y="328" font-size="24" font-weight="700" fill="#c2410c">Review Focus</text>
-  <text x="834" y="370" font-size="19" fill="#1f2937">Integrations: Twitter</text>
+  <text x="834" y="370" font-size="19" fill="#1f2937">Integrations: App Engine</text>
   <text x="834" y="466" font-size="19" fill="#1f2937">Sensitive surfaces:</text>
-<text x="834" y="490" font-size="19" fill="#1f2937">authentication, database,</text>
-<text x="834" y="514" font-size="19" fill="#1f2937">external_api, file_parsing,</text>
+<text x="834" y="490" font-size="19" fill="#1f2937">private signup data, XSRF,</text>
+<text x="834" y="514" font-size="19" fill="#1f2937">legacy framework boundary</text>
 
   <path d="M392 424h50" stroke="#94a3b8" stroke-width="4" stroke-linecap="round"/>
   <path d="M430 412l18 12-18 12z" fill="#94a3b8"/>

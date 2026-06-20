@@ -7,7 +7,7 @@ NextInvite.com is a Google App Engine-era Python app that stores data in the
 App Engine datastore.
 
 The repository is useful as a preserved App Engine/Tornado-style web app sample
-with templates, static assets, datastore code, and vendored Tornado modules.
+with templates, static assets, datastore code, and a WSGI-only Tornado subset.
 Project context lives in [`next/README`](next/README).
 
 The goal is to keep the app recoverable while making datastore, hosting, and
@@ -80,7 +80,7 @@ Contribution rules:
 - Run `make lint`, `make test`, `make build`, and `make check` before pushing
   route, template, or validation changes.
   GitHub Actions should run the same SDK-free baseline for pushed changes.
-- Preserve license and provenance for vendored dependencies.
+- Preserve license and provenance for the WSGI-only Tornado subset.
 
 ## Security And Privacy
 
