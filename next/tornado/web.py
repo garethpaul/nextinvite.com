@@ -71,8 +71,8 @@ import stat
 import sys
 import threading
 import time
-import tornado
 import traceback
+import tornado
 import types
 import urllib
 import urlparse
@@ -105,6 +105,7 @@ class RequestHandler(object):
     def __init__(self, application, request, **kwargs):
         self.application = application
         self.request = request
+        self.request_id = uuid.uuid4().hex
         self._headers_written = False
         self._finished = False
         self._auto_finish = True
@@ -204,6 +205,7 @@ class RequestHandler(object):
         }
         self._list_headers = []
         self.set_default_headers()
+        self._headers["X-Request-ID"] = self.request_id
         if not self.request.supports_http_1_1():
             if self.request.headers.get("Connection") == "Keep-Alive":
                 self.set_header("Connection", "Keep-Alive")
@@ -665,12 +667,54 @@ class RequestHandler(object):
             return
         self.clear()
         self.set_status(status_code)
+        kwargs.pop("exc_info", None)
         try:
             self.write_error(status_code, **kwargs)
         except Exception:
-            logging.error("Uncaught exception in write_error", exc_info=True)
+            self._log_request_error(
+                "error_renderer_failure", 500, sys.exc_info())
+            self.clear()
+            self._finished = False
+            self.set_status(500)
+            self._write_generic_error(500)
         if not self._finished:
             self.finish()
+
+    def _wants_json_error(self):
+        accept = self.request.headers.get("Accept", "")
+        for media_range in accept.split(","):
+            parts = [part.strip() for part in media_range.split(";")]
+            media_type = parts[0].lower()
+            quality = 1.0
+            for parameter in parts[1:]:
+                if parameter.lower().startswith("q="):
+                    try:
+                        quality = float(parameter[2:])
+                    except ValueError:
+                        quality = 0.0
+            if quality > 0 and (media_type == "application/json" or
+                                media_type.endswith("+json")):
+                return True
+        return False
+
+    def _write_generic_error(self, status_code):
+        message = httplib.responses[status_code]
+        self.set_header("Cache-Control", "no-store")
+        if self._wants_json_error():
+            self.set_header("Content-Type", "application/json; charset=UTF-8")
+            self.finish({
+                "error": {
+                    "code": status_code,
+                    "message": message,
+                    "request_id": self.request_id,
+                },
+            })
+            return
+        self.finish("<html><title>%(code)d: %(message)s</title>"
+                    "<body>%(code)d: %(message)s</body></html>" % {
+                        "code": status_code,
+                        "message": message,
+                    })
 
     def write_error(self, status_code, **kwargs):
         """Override to implement custom error pages.
@@ -678,10 +722,9 @@ class RequestHandler(object):
         ``write_error`` may call `write`, `render`, `set_header`, etc
         to produce output as usual.
 
-        If this error was caused by an uncaught exception, an ``exc_info``
-        triple will be available as ``kwargs["exc_info"]``.  Note that this
-        exception may not be the "current" exception for purposes of
-        methods like ``sys.exc_info()`` or ``traceback.format_exc``.
+        Exception objects are intentionally removed before this method runs.
+        Error renderers are response-only code and must not receive traceback
+        or exception values.
 
         For historical reasons, if a method ``get_error_html`` exists,
         it will be used instead of the default ``write_error`` implementation.
@@ -691,29 +734,9 @@ class RequestHandler(object):
         to override ``write_error`` instead.
         """
         if hasattr(self, 'get_error_html'):
-            if 'exc_info' in kwargs:
-                exc_info = kwargs.pop('exc_info')
-                kwargs['exception'] = exc_info[1]
-                try:
-                    # Put the traceback into sys.exc_info()
-                    raise exc_info[0], exc_info[1], exc_info[2]
-                except Exception:
-                    self.finish(self.get_error_html(status_code, **kwargs))
-            else:
-                self.finish(self.get_error_html(status_code, **kwargs))
+            self.finish(self.get_error_html(status_code, **kwargs))
             return
-        if self.settings.get("debug") and "exc_info" in kwargs:
-            # in debug mode, try to send a traceback
-            self.set_header('Content-Type', 'text/plain')
-            for line in traceback.format_exception(*kwargs["exc_info"]):
-                self.write(line)
-            self.finish()
-        else:
-            self.finish("<html><title>%(code)d: %(message)s</title>" 
-                        "<body>%(code)d: %(message)s</body></html>" % {
-                    "code": status_code,
-                    "message": httplib.responses[status_code],
-                    })
+        self._write_generic_error(status_code)
 
     @property
     def locale(self):
@@ -902,8 +925,8 @@ class RequestHandler(object):
                 return callback(*args, **kwargs)
             except Exception, e:
                 if self._headers_written:
-                    logging.error("Exception after headers written",
-                                  exc_info=True)
+                    self._log_request_error(
+                        "exception_after_headers", 500, sys.exc_info())
                 else:
                     self._handle_request_exception(e)
         return wrapper
@@ -983,24 +1006,52 @@ class RequestHandler(object):
         self.application.log_request(self)
 
     def _request_summary(self):
-        return self.request.method + " " + self.request.uri + \
-            " (" + self.request.remote_ip + ")"
+        return self.request.method + " " + self.request.path
+
+    def _log_request_error(self, event, status_code, exc_info=None):
+        payload = {
+            "event": event,
+            "handler": self.__class__.__name__,
+            "method": self.request.method,
+            "request_id": self.request_id,
+            "status": status_code,
+        }
+        if exc_info is not None:
+            exception = exc_info[1]
+            exception_types = []
+            seen = set()
+            while exception is not None and id(exception) not in seen:
+                seen.add(id(exception))
+                exception_types.append(exception.__class__.__name__)
+                exception = getattr(exception, "__cause__", None) or \
+                    getattr(exception, "__context__", None)
+            payload["exception_types"] = exception_types
+            payload["stack"] = [
+                {
+                    "file": os.path.basename(filename),
+                    "function": function_name,
+                    "line": line_number,
+                }
+                for filename, line_number, function_name, _ in
+                traceback.extract_tb(exc_info[2])
+            ]
+        logging.error("%s", escape.json_encode(payload))
 
     def _handle_request_exception(self, e):
         if isinstance(e, HTTPError):
             if e.log_message:
-                format = "%d %s: " + e.log_message
-                args = [e.status_code, self._request_summary()] + list(e.args)
-                logging.warning(format, *args)
+                self._log_request_error(
+                    "http_error", e.status_code, sys.exc_info())
             if e.status_code not in httplib.responses:
-                logging.error("Bad HTTP status code: %d", e.status_code)
-                self.send_error(500, exc_info=sys.exc_info())
+                self._log_request_error(
+                    "invalid_http_status", 500, sys.exc_info())
+                self.send_error(500)
             else:
-                self.send_error(e.status_code, exc_info=sys.exc_info())
+                self.send_error(e.status_code)
         else:
-            logging.error("Uncaught exception %s\n%r", self._request_summary(),
-                          self.request, exc_info=True)
-            self.send_error(500, exc_info=sys.exc_info())
+            self._log_request_error(
+                "uncaught_exception", 500, sys.exc_info())
+            self.send_error(500)
 
     def _ui_module(self, name, module):
         def render(*args, **kwargs):

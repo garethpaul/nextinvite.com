@@ -4,6 +4,9 @@
 
 - Replaced the broad overall-address expression with linear email shape validation
   for one separator and a dotted domain.
+- Removed vendored Tornado stack traces and exception objects from HTTP error
+  renderers, added generic HTML/JSON responses with opaque request IDs, and
+  redacted request and exception values from structured server logs.
 
 ## 2026-06-17
 
