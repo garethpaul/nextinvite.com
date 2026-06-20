@@ -10,7 +10,7 @@ import types
 
 
 ROOT = Path(__file__).resolve().parents[1]
-EXPECTED_MAKEFILE = """ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
+EXPECTED_MAKEFILE = """override ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 
 .PHONY: build check lint static-check test verify
 
