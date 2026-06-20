@@ -58,8 +58,11 @@ Helpful reports include:
   headers, query strings, and client addresses while retaining exception type
   names and stack frame locations.
 - Runtime migration remains P0 before redeployment. The retired Python 2 App
-  Engine runtime and the remaining vendored framework surface require a
-  separate migration review before this application is exposed again.
+  Engine runtime and the remaining WSGI-only Tornado subset require a separate
+  migration review before this application is exposed again.
+- The WSGI-only Tornado subset intentionally omits upstream authentication,
+  socket, HTTP client/server, and test modules. Reintroducing those surfaces
+  requires a separate security review and executable runtime evidence.
 - Idempotent signup keys should hash normalized addresses with SHA-256 so retry
   deduplication does not expose plaintext email in datastore identifiers; this
   is deterministic hashing, not encryption.

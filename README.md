@@ -21,7 +21,8 @@ Additional scan context:
 - Source directories: next
 - Dependency and build manifests: none detected
 - Entry points or build surfaces: none detected
-- Test-looking files: next/tornado/test/__init__.py, next/tornado/test/auth_test.py, next/tornado/test/curl_httpclient_test.py, next/tornado/test/escape_test.py, next/tornado/test/gen_test.py, next/tornado/test/httpclient_test.py, next/tornado/test/httpserver_test.py, next/tornado/test/httputil_test.py, and 4 more
+- Maintained tests: `tests/test_debug_trace_policy.py` and
+  `tests/test_vendored_tornado_surface.py`
 
 ## Getting Started
 
@@ -42,6 +43,9 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 
 - The legacy App Engine entry point is `next/server.py`, configured by
   `next/app.yaml`.
+- The checked-in framework is a WSGI-only Tornado subset containing only the
+  modules imported by `tornado.web` and `tornado.wsgi`; it is not a complete or
+  currently supported Tornado distribution.
 - Run the app with a compatible first-generation App Engine Python SDK when one
   is available.
 - Invite signup emails are normalized, format-checked, and capped at the
@@ -169,14 +173,11 @@ When the required SDK or runtime is unavailable, use static checks and source re
   Engine or Tornado layers may still buffer request transport data.
 - Preserve idempotent signup key generation when changing datastore persistence.
 - App Engine handlers are configured with `secure: always`, and templates should not disable Tornado autoescaping.
-- Review changes touching authentication or token handling; examples from the scan include next/base.py, next/markdown.py, next/tornado/auth.py, next/tornado/database.py, and 6 more.
-- Review changes touching external API calls or credential-adjacent configuration; examples from the scan include next/markdown.py, next/tornado/auth.py, next/tornado/autoreload.py, next/tornado/escape.py, and 6 more.
-- Review changes touching network requests, sockets, or service endpoints; examples from the scan include next/base.py, next/markdown.py, next/server.py, next/static/style.css, and 6 more.
-- Review changes touching mobile permissions or privacy-sensitive device data; examples from the scan include next/tornado/__init__.py, next/tornado/auth.py, next/tornado/autoreload.py, next/tornado/curl_httpclient.py, and 6 more.
-- Review changes touching file, media, JSON, XML, CSV, OCR, or data parsing; examples from the scan include next/app.yaml, next/markdown.py, next/tornado/auth.py, next/tornado/autoreload.py, and 6 more.
-- Review changes touching shell execution, subprocess, or dynamic evaluation; examples from the scan include next/tornado/autoreload.py, next/tornado/test/run_pyversion_tests.py.
-- Review changes touching database, model, or persistence code; examples from the scan include next/server.py, next/tornado/database.py.
-- Review changes touching infrastructure, proxy, cloud, or deployment configuration; examples from the scan include next/tornado/httpserver.py, next/tornado/test/httpserver_test.py.
+- Review changes touching authentication, persistence, or private signup data in
+  `next/base.py`, `next/server.py`, and `next/markdown.py`.
+- Review the WSGI-only Tornado subset as application-owned legacy code; do not
+  add unused upstream auth, socket, HTTP client/server, or test modules back to
+  the repository.
 
 ## Maintenance Notes
 
@@ -192,6 +193,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
 - See `docs/plans/2026-06-10-ci-baseline.md` for the lightweight CI baseline.
 - See `docs/plans/2026-06-18-debug-trace-response-hardening.md` for the generic
   error-response and server-side logging contract.
+- See `docs/plans/2026-06-20-vendored-tornado-surface-containment.md` for the
+  WSGI-only framework boundary and response-finish contract.
 - See `SECURITY.md` for vulnerability reporting and safe research guidance.
 - See `VISION.md` for project direction and contribution guardrails.
 

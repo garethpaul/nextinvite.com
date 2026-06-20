@@ -13,3 +13,4 @@ lint test build: static-check
 static-check:
 	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) "$(ROOT)/scripts/check-baseline.py"
 	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) -W ignore::DeprecationWarning "$(ROOT)/tests/test_debug_trace_policy.py"
+	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) "$(ROOT)/tests/test_vendored_tornado_surface.py"

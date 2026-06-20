@@ -20,24 +20,8 @@ Google's webapp (http://code.google.com/appengine/docs/python/tools/webapp/),
 but with additional tools and optimizations to take advantage of the
 Tornado non-blocking web server and tools.
 
-Here is the canonical "Hello, world" example app::
-
-    import tornado.ioloop
-    import tornado.web
-
-    class MainHandler(tornado.web.RequestHandler):
-        def get(self):
-            self.write("Hello, world")
-
-    if __name__ == "__main__":
-        application = tornado.web.Application([
-            (r"/", MainHandler),
-        ])
-        application.listen(8888)
-        tornado.ioloop.IOLoop.instance().start()
-
-See the Tornado walkthrough on http://tornadoweb.org for more details
-and a good getting started guide.
+This preserved subset is used only through ``tornado.wsgi.WSGIApplication``.
+It intentionally omits Tornado's native HTTP server and I/O loop.
 
 Thread-safety notes
 -------------------
@@ -527,7 +511,8 @@ class RequestHandler(object):
         if html_bodies:
             hloc = html.index(b('</body>'))
             html = html[:hloc] + b('').join(html_bodies) + b('\n') + html[hloc:]
-        self.finish(html)
+        self.write(html)
+        self.finish()
 
     def render_string(self, template_name, **kwargs):
         """Generate the given template with the given arguments.
@@ -609,14 +594,12 @@ class RequestHandler(object):
         if headers or chunk:
             self.request.write(headers + chunk, callback=callback)
 
-    def finish(self, chunk=None):
+    def finish(self):
         """Finishes this response, ending the HTTP request."""
         if self._finished:
             raise RuntimeError("finish() called twice.  May be caused "
                                "by using async operations without the "
                                "@asynchronous decorator.")
-
-        if chunk is not None: self.write(chunk)
 
         # Automatically support ETags and add the Content-Length header if
         # we have not flushed any content yet.
@@ -702,19 +685,21 @@ class RequestHandler(object):
         self.set_header("Cache-Control", "no-store")
         if self._wants_json_error():
             self.set_header("Content-Type", "application/json; charset=UTF-8")
-            self.finish({
+            self.write({
                 "error": {
                     "code": status_code,
                     "message": message,
                     "request_id": self.request_id,
                 },
             })
+            self.finish()
             return
-        self.finish("<html><title>%(code)d: %(message)s</title>"
-                    "<body>%(code)d: %(message)s</body></html>" % {
-                        "code": status_code,
-                        "message": message,
-                    })
+        self.write("<html><title>%(code)d: %(message)s</title>"
+                   "<body>%(code)d: %(message)s</body></html>" % {
+                       "code": status_code,
+                       "message": message,
+                   })
+        self.finish()
 
     def write_error(self, status_code, **kwargs):
         """Override to implement custom error pages.
@@ -734,7 +719,8 @@ class RequestHandler(object):
         to override ``write_error`` instead.
         """
         if hasattr(self, 'get_error_html'):
-            self.finish(self.get_error_html(status_code, **kwargs))
+            self.write(self.get_error_html(status_code, **kwargs))
+            self.finish()
             return
         self._write_generic_error(status_code)
 
@@ -1223,30 +1209,6 @@ class Application(object):
                 handlers.insert(0, (pattern, static_handler_class,
                                     static_handler_args))
         if handlers: self.add_handlers(".*$", handlers)
-
-        # Automatically reload modified modules
-        if self.settings.get("debug") and not wsgi:
-            from tornado import autoreload
-            autoreload.start()
-
-    def listen(self, port, address="", **kwargs):
-        """Starts an HTTP server for this application on the given port.
-
-        This is a convenience alias for creating an HTTPServer object
-        and calling its listen method.  Keyword arguments not
-        supported by HTTPServer.listen are passed to the HTTPServer
-        constructor.  For advanced uses (e.g. preforking), do not use
-        this method; create an HTTPServer and call its bind/start
-        methods directly.
-
-        Note that after calling this method you still need to call
-        IOLoop.instance().start() to start the server.
-        """
-        # import is here rather than top level because HTTPServer
-        # is not importable on appengine
-        from tornado.httpserver import HTTPServer
-        server = HTTPServer(self, **kwargs)
-        server.listen(port, address)
 
     def add_handlers(self, host_pattern, host_handlers):
         """Appends the given handlers to our handler list.

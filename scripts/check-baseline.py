@@ -25,6 +25,7 @@ lint test build: static-check
 static-check:
 \tPYTHONDONTWRITEBYTECODE=1 $(PYTHON) "$(ROOT)/scripts/check-baseline.py"
 \tPYTHONDONTWRITEBYTECODE=1 $(PYTHON) -W ignore::DeprecationWarning "$(ROOT)/tests/test_debug_trace_policy.py"
+\tPYTHONDONTWRITEBYTECODE=1 $(PYTHON) "$(ROOT)/tests/test_vendored_tornado_surface.py"
 """
 PLAN_PATH = "docs/plans/2026-06-08-nextinvite-baseline.md"
 LENGTH_PLAN_PATH = "docs/plans/2026-06-09-signup-email-length.md"
@@ -53,6 +54,7 @@ SIGNUP_REQUEST_OWNERSHIP_PLAN_PATH = "docs/plans/2026-06-16-signup-request-owner
 SIGNUP_SUBMIT_BUSY_STATE_PLAN_PATH = "docs/plans/2026-06-17-signup-submit-busy-state.md"
 LINEAR_EMAIL_SHAPE_PLAN_PATH = "docs/plans/2026-06-18-linear-email-shape-validation.md"
 DEBUG_TRACE_PLAN_PATH = "docs/plans/2026-06-18-debug-trace-response-hardening.md"
+TORNADO_SURFACE_PLAN_PATH = "docs/plans/2026-06-20-vendored-tornado-surface-containment.md"
 
 
 def read(relative_path):
@@ -176,8 +178,10 @@ def main():
         SIGNUP_SUBMIT_BUSY_STATE_PLAN_PATH,
         LINEAR_EMAIL_SHAPE_PLAN_PATH,
         DEBUG_TRACE_PLAN_PATH,
+        TORNADO_SURFACE_PLAN_PATH,
         "scripts/check-baseline.py",
         "tests/test_debug_trace_policy.py",
+        "tests/test_vendored_tornado_surface.py",
     ]
     for path in required:
         require((ROOT / path).is_file(), f"required file missing: {path}", failures)
