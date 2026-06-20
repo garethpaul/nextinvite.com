@@ -594,12 +594,14 @@ class RequestHandler(object):
         if headers or chunk:
             self.request.write(headers + chunk, callback=callback)
 
-    def finish(self):
+    def finish(self, chunk=None):
         """Finishes this response, ending the HTTP request."""
         if self._finished:
             raise RuntimeError("finish() called twice.  May be caused "
                                "by using async operations without the "
                                "@asynchronous decorator.")
+
+        if chunk is not None: self.write(chunk)
 
         # Automatically support ETags and add the Content-Length header if
         # we have not flushed any content yet.

@@ -2,9 +2,9 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use executing-plans to implement this plan task-by-task.
 
-**Goal:** Limit the preserved App Engine application to the vendored Tornado modules it actually imports and remove the response-body shortcut that CodeQL treats as a tainted HTTP sink.
+**Goal:** Limit the preserved App Engine application to the vendored Tornado modules it actually imports while keeping framework response writes explicit enough that test-only reflective-XSS flows do not reappear.
 
-**Architecture:** Keep the existing Python 2 App Engine and Tornado WSGI behavior, but reduce the vendored package to the static import closure rooted at `tornado.web` and `tornado.wsgi`. Enforce the boundary with a Python 3 structural regression test, and make every internal response body write explicit before calling a bodyless `finish()`.
+**Architecture:** Keep the existing Python 2 App Engine and Tornado WSGI behavior, but reduce the vendored package to the static import closure rooted at `tornado.web` and `tornado.wsgi`. Enforce the boundary with synthetic converted WSGI smoke checks that run under Python 3 for local maintenance only; they do not prove Python 3 App Engine compatibility. Internal framework response bodies should be written with `write(...)` before `finish()`, while the historical public `finish(chunk=None)` compatibility API remains available to handlers.
 
 **Tech Stack:** Python 2 source, Python 3 structural tests, GNU Make, GitHub Actions, CodeQL.
 
@@ -17,8 +17,8 @@
 
 1. Assert that the vendored package contains only the nine modules in the WSGI import closure.
 2. Assert that the non-executed upstream `next/tornado/test` suite is absent.
-3. Assert that `RequestHandler.finish` accepts no response chunk and that no internal caller passes one.
-4. Run `python3 tests/test_vendored_tornado_surface.py`; expect failure against the current oversized package and `finish(chunk)` API.
+3. Assert that `RequestHandler.finish(chunk=None)` remains available and that no internal caller passes a response body through it.
+4. Run `python3 tests/test_vendored_tornado_surface.py`; expect failure against the current oversized package or a missing legacy `finish(chunk)` compatibility contract.
 
 ### Task 2: Prune unreachable framework code
 
@@ -28,7 +28,7 @@
 
 1. Delete modules not reachable from `next/server.py` or `next/base.py` through `tornado.web` and `tornado.wsgi`.
 2. Replace internal `finish(body)` calls with explicit `write(body)` followed by `finish()`.
-3. Remove the `chunk` parameter and implicit write from `RequestHandler.finish`.
+3. Preserve the `chunk` parameter and implicit write in `RequestHandler.finish` for legacy handler compatibility.
 4. Run the focused containment test; expect pass.
 
 ### Task 3: Integrate and document the boundary

@@ -125,6 +125,9 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   checkout's Makefile by absolute path, such as
   `make -f /path/to/nextinvite.com/Makefile check`.
 - `python3 scripts/check-baseline.py`
+- `tests/test_vendored_tornado_surface.py` includes synthetic converted WSGI smoke
+  checks for the preserved legacy framework and active `/` plus
+  `/signup` routes. This does not prove Python 3 App Engine compatibility.
 - GitHub Actions runs the SDK-free `make check` gate through
   `.github/workflows/check.yml` on pushes and pull requests.
 - Pinned `ubuntu-24.04` GitHub Actions uses a read-only, credential-free
