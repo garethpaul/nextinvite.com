@@ -125,14 +125,12 @@ class SignUpHandler(base.BaseHandler):
 	def post(self):
 		request_body = self.request.body or ""
 		if len(request_body) > MAX_SIGNUP_BODY_BYTES:
-			self.set_status(413)
-			self.write("request too large")
+			self.send_error(413)
 			return
 
 		email = normalize_email(self.get_argument('email', ''))
 		if not is_valid_email(email):
-			self.set_status(400)
-			self.write("invalid email")
+			self.send_error(400)
 			return
 
 		s = SignUp(key_name=signup_key_name(email))

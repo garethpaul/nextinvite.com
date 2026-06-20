@@ -79,8 +79,13 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 - The signup body limit rejects form bodies larger than 4 KiB with a generic
   `413` before the handler reads the email argument.
 - HTTP error responses remain generic even when vendored Tornado debug behavior
-  is requested; uncaught exception details remain in server-side logs instead
-  of response bodies.
+  is requested. HTML clients receive only the standard status page; JSON
+  clients receive a stable `error.code`, `error.message`, and opaque
+  `error.request_id` object. The same request ID is returned in the
+  `X-Request-ID` header.
+- Uncaught exception logs are structured and exclude exception messages,
+  request bodies, headers, query strings, and client addresses. They retain
+  only exception types and stack frame locations needed for correlation.
 - Runtime migration remains P0 before redeployment. This retired Python 2 App
   Engine application is not made deployment-ready by response hardening.
 

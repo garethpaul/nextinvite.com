@@ -50,8 +50,13 @@ Helpful reports include:
 - The signup body limit should reject more than 4 KiB before handler argument
   access and return a generic `413` without echoing private form content.
 - HTTP error responses remain generic for production and local debugging;
-  uncaught exception details remain in server-side logs and must never be
-  rendered into response bodies.
+  exception objects are never passed to response renderers. Error responses
+  carry an opaque `X-Request-ID`, and JSON negotiation uses a stable generic
+  error object without request or exception data.
+- Server-side error logs use structured records keyed by the same request ID.
+  They exclude exception messages, nested-cause messages, request bodies,
+  headers, query strings, and client addresses while retaining exception type
+  names and stack frame locations.
 - Runtime migration remains P0 before redeployment. The retired Python 2 App
   Engine runtime and the remaining vendored framework surface require a
   separate migration review before this application is exposed again.

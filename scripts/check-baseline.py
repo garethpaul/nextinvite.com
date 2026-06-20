@@ -220,8 +220,7 @@ def main():
     require("\nMAX_SIGNUP_BODY_BYTES = 4096\n" in server and
             "request_body = self.request.body or \"\"" in signup_post and
             0 <= body_guard_index < argument_index and
-            "self.set_status(413)" in signup_post and
-            'self.write("request too large")' in signup_post,
+            "self.send_error(413)" in signup_post,
             "signup body must be bounded with a generic 413 before argument access", failures)
     require("has_valid_email_dots" in server,
             "signup route must reject unsafe email dot placement", failures)
@@ -238,7 +237,7 @@ def main():
             "signup route must validate top-level domain length and alphabetic content", failures)
     require("MAX_EMAIL_LENGTH = 254" in server and "len(email) <= MAX_EMAIL_LENGTH" in server,
             "signup route must enforce the 254-character email length limit", failures)
-    require("self.set_status(400)" in server and 'self.write("invalid email")' in server,
+    require("self.send_error(400)" in server,
             "invalid signup emails must return a deterministic 400", failures)
     require('"xsrf_cookies": True' in server, "XSRF protection must remain enabled", failures)
 

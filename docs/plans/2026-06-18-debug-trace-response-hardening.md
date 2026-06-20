@@ -12,12 +12,18 @@ deployment can disclose source paths, exception messages, and stack frames.
 
 ## Decision
 
-The default vendored error renderer will always return the existing generic
-status response, regardless of the `debug` setting or the presence of
-`exc_info`. The framework's existing `_handle_request_exception` path will
-continue to log uncaught exceptions with `exc_info=True` before rendering the
-generic response. Custom `write_error` and legacy `get_error_html` overrides
-will keep receiving exception context for compatibility.
+The default vendored error renderer will always return a generic status
+response, regardless of the `debug` setting or the presence of `exc_info`.
+Exception objects are removed before custom `write_error` and legacy
+`get_error_html` renderers run. HTML remains the default; clients explicitly
+accepting JSON receive a stable generic error object. Every response carries a
+new opaque request ID for support correlation.
+
+The framework's `_handle_request_exception` path will log a structured record
+containing the request ID, handler, method, status, exception type chain, and
+stack frame locations. It will not log exception messages, request bodies,
+headers, query strings, or client addresses. A failing custom error renderer
+will have its partial output discarded before the generic 500 is written.
 
 The application will set `debug` to `False` explicitly instead of inferring it
 from `SERVER_SOFTWARE`. Local debugging remains available through server-side
@@ -28,9 +34,9 @@ logs; HTTP responses are not a debugging channel.
 1. Override only the application's handler. Rejected because the active
    vendored framework sink would remain and future handlers could bypass the
    override.
-2. Remove `exc_info` before error rendering. Rejected because it would break
-   compatible custom error handlers and is unnecessary to prevent the default
-   response disclosure.
+2. Preserve `exc_info` for custom error renderers. Rejected because it leaves
+   a second disclosure path outside the default renderer and lets nested cause
+   values cross into response-only code.
 3. Exclude the vendored source from CodeQL. Rejected because it hides the
    alert without changing runtime behavior.
 
