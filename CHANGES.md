@@ -4,7 +4,9 @@
 
 - Made absolute Makefile verification portable across checkout paths containing
   spaces or apostrophes and rejected `MAKEFILE_LIST` injection.
-- Added the path and injection regressions to every static verification alias.
+- Expanded the root-policy regressions across all six Make aliases to cover
+  brackets plus command-line and environment overrides, and resolved portable
+  shell helpers from `PATH`.
 
 ## 2026-06-18
 
