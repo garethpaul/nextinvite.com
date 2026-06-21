@@ -60,6 +60,9 @@ Helpful reports include:
 - Runtime migration remains P0 before redeployment. The retired Python 2 App
   Engine runtime and the remaining WSGI-only Tornado subset require a separate
   migration review before this application is exposed again.
+- The synthetic converted WSGI smoke checks exercise the preserved legacy
+  framework and active route behavior for local maintenance only; this does not
+  prove Python 3 App Engine compatibility.
 - The WSGI-only Tornado subset intentionally omits upstream authentication,
   socket, HTTP client/server, and test modules. Reintroducing those surfaces
   requires a separate security review and executable runtime evidence.

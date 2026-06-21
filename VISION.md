@@ -46,6 +46,8 @@ Priority:
 - Keep GitHub Actions running the SDK-free `make check` baseline
 - Keep that dependency-free baseline pinned, read-only, and credential-free in
   hosted Linux CI
+- Keep synthetic converted WSGI smoke coverage for the legacy route behavior
+  clear that it does not prove Python 3 App Engine compatibility
 - Keep the `SignUp` entity contract explicit: normalized plaintext email,
   automatic creation timestamp, and deterministic idempotent key name
 - Keep hash-derived datastore keys documented as idempotency, not encryption
