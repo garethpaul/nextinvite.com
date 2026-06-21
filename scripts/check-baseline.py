@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 EXPECTED_MAKEFILE = """ifneq ($(origin MAKEFILE_LIST),file)
 $(error MAKEFILE_LIST must not be overridden)
 endif
-override ROOT := $(shell path='$(subst ','"'"',$(MAKEFILE_LIST))'; path=$$(printf '%s' "$$path" | /usr/bin/sed 's/^ //'); /usr/bin/dirname -- "$$path")
+override ROOT := $(shell path='$(subst ','"'"',$(MAKEFILE_LIST))'; path=$$(printf '%s\\n' "$$path" | sed 's/^ //'); dirname -- "$$path")
 
 .PHONY: build check lint static-check test verify
 
@@ -59,6 +59,7 @@ SIGNUP_SUBMIT_BUSY_STATE_PLAN_PATH = "docs/plans/2026-06-17-signup-submit-busy-s
 LINEAR_EMAIL_SHAPE_PLAN_PATH = "docs/plans/2026-06-18-linear-email-shape-validation.md"
 DEBUG_TRACE_PLAN_PATH = "docs/plans/2026-06-18-debug-trace-response-hardening.md"
 TORNADO_SURFACE_PLAN_PATH = "docs/plans/2026-06-20-vendored-tornado-surface-containment.md"
+SPACED_MAKEFILE_PLAN_PATH = "docs/plans/2026-06-21-spaced-makefile-path.md"
 
 
 def read(relative_path):
@@ -183,6 +184,8 @@ def main():
         LINEAR_EMAIL_SHAPE_PLAN_PATH,
         DEBUG_TRACE_PLAN_PATH,
         TORNADO_SURFACE_PLAN_PATH,
+        SPACED_MAKEFILE_PLAN_PATH,
+        "tests/test_makefile_root.py",
         "scripts/check-baseline.py",
         "tests/test_debug_trace_policy.py",
         "tests/test_vendored_tornado_surface.py",
@@ -461,6 +464,7 @@ def main():
     changes_source = read("CHANGES.md")
     docs = readme_source + "\n" + vision_source + "\n" + security_source
     location_independent_make_plan = read(LOCATION_INDEPENDENT_MAKE_PLAN_PATH)
+    spaced_makefile_plan = read(SPACED_MAKEFILE_PLAN_PATH)
     require("make -f /path/to/nextinvite.com/Makefile check" in readme_source,
             "README must document location-independent Makefile invocation", failures)
     require(all(evidence in location_independent_make_plan.lower() for evidence in [
@@ -469,6 +473,14 @@ def main():
         "six isolated hostile mutations",
     ]),
             "location-independent Make plan must record completed root, external, and mutation verification",
+            failures)
+    require(all(value in spaced_makefile_plan for value in [
+        "status: completed",
+        "spaces, brackets, and an apostrophe",
+        "MAKEFILE_LIST",
+        "all six Make aliases",
+    ]),
+            "spaced Makefile path plan must preserve hostile-path and override verification",
             failures)
     for phrase in ["make lint", "make test", "make build", "make check", "GitHub Actions", "datastore", "private user data"]:
         require(phrase.lower() in docs.lower(), f"docs must mention {phrase}", failures)
