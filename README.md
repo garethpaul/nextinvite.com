@@ -121,9 +121,12 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 - `make test`
 - `make build`
 - `make check`
-- The Make gates are location-independent. From another directory, pass the
-  checkout's Makefile by absolute path, such as
+- The Make gates are location-independent, including checkout paths containing
+  spaces or apostrophes. From another directory, pass the checkout's Makefile
+  by absolute path, such as
   `make -f /path/to/nextinvite.com/Makefile check`.
+- `MAKEFILE_LIST` overrides are rejected before verification commands are
+  emitted, so callers cannot redirect policy checks into another tree.
 - `python3 scripts/check-baseline.py`
 - `tests/test_vendored_tornado_surface.py` includes synthetic converted WSGI smoke
   checks for the preserved legacy framework and active `/` plus

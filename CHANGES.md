@@ -1,5 +1,11 @@
 # Changes
 
+## 2026-06-21
+
+- Made absolute Makefile verification portable across checkout paths containing
+  spaces or apostrophes and rejected `MAKEFILE_LIST` injection.
+- Added the path and injection regressions to every static verification alias.
+
 ## 2026-06-18
 
 - Replaced the broad overall-address expression with linear email shape validation
