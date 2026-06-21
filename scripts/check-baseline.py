@@ -10,7 +10,10 @@ import types
 
 
 ROOT = Path(__file__).resolve().parents[1]
-EXPECTED_MAKEFILE = """override ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
+EXPECTED_MAKEFILE = """ifneq ($(origin MAKEFILE_LIST),file)
+$(error MAKEFILE_LIST must not be overridden)
+endif
+override ROOT := $(shell path='$(subst ','"'"',$(MAKEFILE_LIST))'; path=$$(printf '%s' "$$path" | /usr/bin/sed 's/^ //'); /usr/bin/dirname -- "$$path")
 
 .PHONY: build check lint static-check test verify
 
@@ -26,6 +29,7 @@ static-check:
 \tPYTHONDONTWRITEBYTECODE=1 $(PYTHON) "$(ROOT)/scripts/check-baseline.py"
 \tPYTHONDONTWRITEBYTECODE=1 $(PYTHON) -W ignore::DeprecationWarning "$(ROOT)/tests/test_debug_trace_policy.py"
 \tPYTHONDONTWRITEBYTECODE=1 $(PYTHON) "$(ROOT)/tests/test_vendored_tornado_surface.py"
+\tPYTHONDONTWRITEBYTECODE=1 $(PYTHON) "$(ROOT)/tests/test_makefile_root.py"
 """
 PLAN_PATH = "docs/plans/2026-06-08-nextinvite-baseline.md"
 LENGTH_PLAN_PATH = "docs/plans/2026-06-09-signup-email-length.md"
