@@ -5,24 +5,31 @@
 
 ## Overview
 
-`garethpaul/nextinvite.com` is a static web project. NextInvite repo
+`garethpaul/nextinvite.com` preserves a historical Google App Engine Python
+invite-signup application. It is not a static site and should be treated as
+non-deployed: as of 2026-06-21, neither the parked `nextinvite.com` domain nor
+the configured `nextinvitation.appspot.com` endpoint serves this application.
 
 This README is based on the checked-in source, manifests, scripts, and repository metadata on the `master` branch. The project language mix found during review was: Python (54), C (1).
 
 ## Repository Contents
 
+- `Makefile` - dependency-free repository verification targets
 - `.github/workflows/check.yml` - CI baseline that runs the static Make gate
-- `next` - source or example code
+- `next` - legacy App Engine source, manifests, templates, and static assets
+- `tests` - maintained static, compatibility, and Make authority checks
 - `SECURITY.md` - security reporting and disclosure guidance
 - `VISION.md` - project direction and maintenance guardrails
 
 Additional scan context:
 
-- Source directories: next
-- Dependency and build manifests: none detected
-- Entry points or build surfaces: none detected
-- Maintained tests: `tests/test_debug_trace_policy.py` and
-  `tests/test_vendored_tornado_surface.py`
+- Source directory: `next`
+- App Engine manifests: `next/app.yaml` and `next/index.yaml`
+- WSGI entry point: `next/server.py`
+- Build and verification surface: the root `Makefile`, with hosted execution in
+  `.github/workflows/check.yml`
+- Maintained tests: `tests/test_debug_trace_policy.py`,
+  `tests/test_vendored_tornado_surface.py`, and `tests/test_makefile_root.py`
 
 ## Getting Started
 
@@ -41,6 +48,9 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 
 ## Running or Using the Project
 
+- This repository is historical and non-deployed. The current custom-domain and
+  configured App Engine endpoints do not provide a runnable instance of the
+  checked-in application.
 - The legacy App Engine entry point is `next/server.py`, configured by
   `next/app.yaml`.
 - The checked-in framework is a WSGI-only Tornado subset containing only the
@@ -128,9 +138,13 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   the complete checkout root. `ROOT` overrides are ignored, and attempts to
   override GNU Make's `MAKEFILE_LIST` metadata fail closed.
 - `python3 scripts/check-baseline.py`
+- `tests/test_debug_trace_policy.py` executes the converted legacy error path and
+  checks that response traces remain redacted and correlated.
 - `tests/test_vendored_tornado_surface.py` includes synthetic converted WSGI smoke
   checks for the preserved legacy framework and active `/` plus
   `/signup` routes. This does not prove Python 3 App Engine compatibility.
+- `tests/test_makefile_root.py` checks location-independent Make invocation and
+  protects the authoritative checkout root from command-line overrides.
 - GitHub Actions runs the SDK-free `make check` gate through
   `.github/workflows/check.yml` on pushes and pull requests.
 - Pinned `ubuntu-24.04` GitHub Actions uses a read-only, credential-free
