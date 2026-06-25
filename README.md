@@ -29,7 +29,8 @@ Additional scan context:
 - Build and verification surface: the root `Makefile`, with hosted execution in
   `.github/workflows/check.yml`
 - Maintained tests: `tests/test_debug_trace_policy.py`,
-  `tests/test_vendored_tornado_surface.py`, and `tests/test_makefile_root.py`
+  `tests/test_signup_persistence.py`, `tests/test_vendored_tornado_surface.py`,
+  and `tests/test_makefile_root.py`
 
 ## Getting Started
 
@@ -109,7 +110,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   It stores normalized email in the `email` `db.TextProperty` and records an
   automatic creation timestamp in the `added` `db.DateTimeProperty`.
 - Each entity uses a deterministic `signup-<sha256>` key name derived from the
-  normalized email. This makes retries idempotent; it is not encryption, and
+  normalized email. Transactional `get_or_insert()` makes retries preserve the
+  first entity and its automatic creation timestamp; it is not encryption, and
   known email addresses may still be guessable. The normalized email remains
   stored as plaintext private data in the entity.
 - The app targets the retired Python 2 App Engine standard environment and uses
@@ -140,6 +142,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 - `python3 scripts/check-baseline.py`
 - `tests/test_debug_trace_policy.py` executes the converted legacy error path and
   checks that response traces remain redacted and correlated.
+- `tests/test_signup_persistence.py` proves normalized retries use the
+  transactional datastore boundary and retain the first signup entity.
 - `tests/test_vendored_tornado_surface.py` includes synthetic converted WSGI smoke
   checks for the preserved legacy framework and active `/` plus
   `/signup` routes. This does not prove Python 3 App Engine compatibility.
@@ -215,6 +219,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   error-response and server-side logging contract.
 - See `docs/plans/2026-06-20-vendored-tornado-surface-containment.md` for the
   WSGI-only framework boundary and response-finish contract.
+- See `docs/plans/2026-06-25-transactional-signup-insert.md` for atomic retry
+  idempotency and creation-timestamp preservation.
 - See `SECURITY.md` for vulnerability reporting and safe research guidance.
 - See `VISION.md` for project direction and contribution guardrails.
 

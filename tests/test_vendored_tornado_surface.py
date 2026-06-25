@@ -195,11 +195,17 @@ class VendoredTornadoSurfaceTest(unittest.TestCase):
                 def __init__(self, key_name=None, **kwargs):
                     self.key_name = key_name
 
-                def put(self):
-                    saved_signups.append({
-                        "key_name": self.key_name,
-                        "email": self.email,
-                    })
+                @classmethod
+                def get_or_insert(cls, key_name, **kwargs):
+                    for signup in saved_signups:
+                        if signup["key_name"] == key_name:
+                            return signup
+                    signup = {
+                        "key_name": key_name,
+                        "email": kwargs["email"],
+                    }
+                    saved_signups.append(signup)
+                    return signup
 
             db.Model = Model
             db.TextProperty = lambda *args, **kwargs: None
@@ -281,6 +287,15 @@ class VendoredTornadoSurfaceTest(unittest.TestCase):
                 "key_name": server.signup_key_name("user@example.com"),
                 "email": "user@example.com",
             }], saved_signups
+
+            retry_status, _, retry_body = request(
+                "POST",
+                "/signup",
+                "_xsrf=legacy-token&email=user%40example.com",
+            )
+            assert retry_status == "200 OK", retry_status
+            assert retry_body == b"ok", retry_body
+            assert len(saved_signups) == 1, saved_signups
             """
             ,
             copy_application=True,
