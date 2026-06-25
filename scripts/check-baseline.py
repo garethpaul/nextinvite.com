@@ -28,6 +28,7 @@ lint test build: static-check
 static-check:
 \tPYTHONDONTWRITEBYTECODE=1 $(PYTHON) "$(ROOT)/scripts/check-baseline.py"
 \tPYTHONDONTWRITEBYTECODE=1 $(PYTHON) -W ignore::DeprecationWarning "$(ROOT)/tests/test_debug_trace_policy.py"
+\tPYTHONDONTWRITEBYTECODE=1 $(PYTHON) "$(ROOT)/tests/test_signup_persistence.py"
 \tPYTHONDONTWRITEBYTECODE=1 $(PYTHON) "$(ROOT)/tests/test_vendored_tornado_surface.py"
 \tPYTHONDONTWRITEBYTECODE=1 $(PYTHON) "$(ROOT)/tests/test_makefile_root.py"
 """
@@ -60,6 +61,7 @@ LINEAR_EMAIL_SHAPE_PLAN_PATH = "docs/plans/2026-06-18-linear-email-shape-validat
 DEBUG_TRACE_PLAN_PATH = "docs/plans/2026-06-18-debug-trace-response-hardening.md"
 TORNADO_SURFACE_PLAN_PATH = "docs/plans/2026-06-20-vendored-tornado-surface-containment.md"
 SPACED_MAKEFILE_PLAN_PATH = "docs/plans/2026-06-21-spaced-makefile-path.md"
+TRANSACTIONAL_SIGNUP_PLAN_PATH = "docs/plans/2026-06-25-transactional-signup-insert.md"
 
 
 def read(relative_path):
@@ -185,9 +187,11 @@ def main():
         DEBUG_TRACE_PLAN_PATH,
         TORNADO_SURFACE_PLAN_PATH,
         SPACED_MAKEFILE_PLAN_PATH,
+        TRANSACTIONAL_SIGNUP_PLAN_PATH,
         "tests/test_makefile_root.py",
         "scripts/check-baseline.py",
         "tests/test_debug_trace_policy.py",
+        "tests/test_signup_persistence.py",
         "tests/test_vendored_tornado_surface.py",
     ]
     for path in required:
@@ -221,11 +225,19 @@ def main():
         "signup route must use linear overall email shape validation",
         failures,
     )
+    signup_post = server.split("class SignUpHandler", 1)[1].split("settings =", 1)[0]
+    persistence = server.split("def persist_signup(email, signup_model=SignUp):", 1)[1].split(
+        "class HomeHandler", 1
+    )[0] if "def persist_signup(email, signup_model=SignUp):" in server else ""
     require("def signup_key_name(email)" in server and
             'hashlib.sha256(normalized_email.encode("utf-8")).hexdigest()' in server and
-            "SignUp(key_name=signup_key_name(email))" in server,
-            "signup persistence must use a deterministic hashed normalized-email key", failures)
-    signup_post = server.split("class SignUpHandler", 1)[1].split("settings =", 1)[0]
+            "signup_model.get_or_insert(" in persistence and
+            "signup_key_name(normalized_email)" in persistence and
+            "email=normalized_email" in persistence and
+            "SignUp(key_name=signup_key_name(email))" not in server and
+            ".put()" not in signup_post and
+            "persist_signup(email)" in signup_post,
+            "signup persistence must transactionally get or insert one hashed normalized-email entity", failures)
     body_guard_index = signup_post.find("if len(request_body) > MAX_SIGNUP_BODY_BYTES")
     argument_index = signup_post.find("self.get_argument('email', '')")
     require("\nMAX_SIGNUP_BODY_BYTES = 4096\n" in server and

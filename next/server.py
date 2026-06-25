@@ -117,6 +117,14 @@ class SignUp(db.Model):
     email = db.TextProperty()
     added= db.DateTimeProperty(auto_now_add=True)
 
+
+def persist_signup(email, signup_model=SignUp):
+	normalized_email = normalize_email(email)
+	return signup_model.get_or_insert(
+		signup_key_name(normalized_email),
+		email=normalized_email,
+	)
+
 class HomeHandler(base.BaseHandler):
 	def get(self):
 		self.render("home.html")
@@ -133,9 +141,7 @@ class SignUpHandler(base.BaseHandler):
 			self.send_error(400)
 			return
 
-		s = SignUp(key_name=signup_key_name(email))
-		s.email = email
-		s.put()
+		persist_signup(email)
 		self.write("ok")
 
 settings = {

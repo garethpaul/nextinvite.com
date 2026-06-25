@@ -23,7 +23,7 @@ Priority:
 - Keep signup templates autoescaped and App Engine handlers on secure transport
 - Maintain security policy for the app
 - Keep signup email handling validated and covered by static contracts
-- Keep idempotent signup keys derived from normalized email hashes
+- Keep transactional idempotent signup inserts keyed by normalized email hashes
 - Keep signup email length limits aligned between the template and route handler
 - Keep email dot validation in place before datastore persistence
 - Keep domain label validation in place before datastore persistence
@@ -49,7 +49,7 @@ Priority:
 - Keep synthetic converted WSGI smoke coverage for the legacy route behavior
   clear that it does not prove Python 3 App Engine compatibility
 - Keep the `SignUp` entity contract explicit: normalized plaintext email,
-  automatic creation timestamp, and deterministic idempotent key name
+  preserved automatic creation timestamp, and deterministic idempotent key name
 - Keep hash-derived datastore keys documented as idempotency, not encryption
 - Keep classic App Engine local development and deployment commands labeled
   historical and unverified without an era-compatible SDK

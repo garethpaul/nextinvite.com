@@ -45,7 +45,8 @@ Helpful reports include:
 - Signup emails are private user data. Do not commit datastore exports, request logs, local App Engine data, `.env` files, or production configuration.
 - The `SignUp` entity stores normalized email as plaintext private data. Its
   deterministic SHA-256 key name provides retry idempotency, not encryption or
-  protection from guessing known addresses.
+  protection from guessing known addresses. Transactional `get_or_insert()`
+  prevents retries from overwriting the first signup timestamp.
 - Signup email inputs should stay normalized, format-checked, and capped at the 254-character address boundary before datastore persistence.
 - The signup body limit should reject more than 4 KiB before handler argument
   access and return a generic `413` without echoing private form content.

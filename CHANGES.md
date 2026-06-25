@@ -1,5 +1,44 @@
 # Changes
 
+## 2026-06-25 04:44 - P2 - Preserve the first signup entity
+
+### Summary
+Replaced overwrite-based deterministic signup writes with the legacy datastore's
+transactional get-or-insert boundary so retries preserve original metadata.
+
+### Work completed
+- Added atomic normalized-email signup persistence with `get_or_insert()`.
+- Added an offline retry regression that proves one entity is retained.
+
+### Threads
+- Started: none — work completed directly in the current repository.
+- Continued: none.
+- Stopped: none.
+
+### Files changed
+- `next/server.py` — added transactional signup persistence.
+- `tests/test_signup_persistence.py` — added retry/idempotency coverage.
+- `tests/test_vendored_tornado_surface.py` — exercised duplicate HTTP signup retries.
+- `Makefile`, `scripts/check-baseline.py` — wired and enforced the new contract.
+- Documentation and plan files — recorded behavior, evidence, and risks.
+
+### Validation
+- `python3 tests/test_signup_persistence.py` — passed after failing before implementation.
+- `/usr/bin/make check` — passed all baseline, error-policy, persistence,
+  converted WSGI smoke, and Make-root tests.
+- `git diff --check` — passed.
+
+### Bugs / findings
+- P2: constructing and putting a fresh model for an existing deterministic key
+  overwrote the entity instead of preserving the first signup record.
+
+### Blockers
+- Live legacy App Engine datastore validation is unavailable; offline contract
+  tests and hosted CI cover the maintained surface.
+
+### Next action
+- Open a PR and complete Codex plus hosted review before merge.
+
 ## 2026-06-21
 
 - Made absolute Makefile verification portable across checkout paths containing
