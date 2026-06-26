@@ -43,6 +43,7 @@ Priority:
 - Keep signup request ownership bound to the active XHR across terminal events
 - Keep the signup submit busy state bound to exact request ownership
 - Keep the signup body limit before signup argument access
+- Signup email values come only from URL-encoded POST bodies, never URL query parameters.
 - Keep `make lint`, `make test`, `make build`, and `make check` on the
   SDK-free static baseline
 - Keep GitHub Actions running the SDK-free `make check` baseline

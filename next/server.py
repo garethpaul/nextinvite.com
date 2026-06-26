@@ -16,6 +16,11 @@ from google.appengine.api import users
 from google.appengine.ext import db
 import base
 
+try:
+    from urllib.parse import parse_qs
+except ImportError:
+    from urlparse import parse_qs
+
 
 LOCAL_PART_RE = re.compile(r"^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+$")
 DOMAIN_LABEL_RE = re.compile(r"^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$")
@@ -26,6 +31,23 @@ MAX_SIGNUP_BODY_BYTES = 4096
 
 def normalize_email(email):
     return email.strip().lower()
+
+
+def signup_body_argument(request_body, name):
+    try:
+        if isinstance(request_body, bytes):
+            request_body = request_body.decode("ascii")
+        values = parse_qs(request_body, keep_blank_values=True).get(name, [])
+    except (TypeError, UnicodeDecodeError, ValueError):
+        return ""
+    return values[-1] if values else ""
+
+
+def has_signup_form_content_type(headers):
+    content_type = headers.get("Content-Type", "")
+    return content_type.split(";", 1)[0].strip().lower() == (
+        "application/x-www-form-urlencoded"
+    )
 
 
 def signup_key_name(email):
@@ -142,8 +164,11 @@ class SignUpHandler(base.BaseHandler):
 		if len(request_body) > MAX_SIGNUP_BODY_BYTES:
 			self.send_error(413)
 			return
+		if not has_signup_form_content_type(self.request.headers):
+			self.send_error(400)
+			return
 
-		email = normalize_email(self.get_argument('email', ''))
+		email = normalize_email(signup_body_argument(request_body, 'email'))
 		if not is_valid_email(email):
 			self.send_error(400)
 			return

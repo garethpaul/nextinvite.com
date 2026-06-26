@@ -199,6 +199,7 @@ When the required SDK or runtime is unavailable, use static checks and source re
   restores the form through the shared generic-feedback path.
 - The signup body limit bounds application-level form handling; upstream App
   Engine or Tornado layers may still buffer request transport data.
+- Signup email values come only from URL-encoded POST bodies, never URL query parameters.
 - Preserve idempotent signup key generation when changing datastore persistence.
 - App Engine handlers are configured with `secure: always`, and templates should not disable Tornado autoescaping.
 - Review changes touching authentication, persistence, or private signup data in

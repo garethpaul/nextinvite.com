@@ -54,6 +54,7 @@ Helpful reports include:
   development server omits only `Secure`.
 - The signup body limit should reject more than 4 KiB before handler argument
   access and return a generic `413` without echoing private form content.
+- Signup email values come only from URL-encoded POST bodies, never URL query parameters.
 - HTTP error responses remain generic for production and local debugging;
   exception objects are never passed to response renderers. Error responses
   carry an opaque `X-Request-ID`, and JSON negotiation uses a stable generic

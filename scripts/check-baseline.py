@@ -62,6 +62,7 @@ DEBUG_TRACE_PLAN_PATH = "docs/plans/2026-06-18-debug-trace-response-hardening.md
 TORNADO_SURFACE_PLAN_PATH = "docs/plans/2026-06-20-vendored-tornado-surface-containment.md"
 SPACED_MAKEFILE_PLAN_PATH = "docs/plans/2026-06-21-spaced-makefile-path.md"
 TRANSACTIONAL_SIGNUP_PLAN_PATH = "docs/plans/2026-06-25-transactional-signup-insert.md"
+SIGNUP_BODY_OWNERSHIP_PLAN_PATH = "docs/plans/2026-06-26-signup-body-ownership.md"
 
 
 def read(relative_path):
@@ -188,6 +189,7 @@ def main():
         TORNADO_SURFACE_PLAN_PATH,
         SPACED_MAKEFILE_PLAN_PATH,
         TRANSACTIONAL_SIGNUP_PLAN_PATH,
+        SIGNUP_BODY_OWNERSHIP_PLAN_PATH,
         "tests/test_makefile_root.py",
         "scripts/check-baseline.py",
         "tests/test_debug_trace_policy.py",
@@ -239,12 +241,15 @@ def main():
             "persist_signup(email)" in signup_post,
             "signup persistence must transactionally get or insert one hashed normalized-email entity", failures)
     body_guard_index = signup_post.find("if len(request_body) > MAX_SIGNUP_BODY_BYTES")
-    argument_index = signup_post.find("self.get_argument('email', '')")
+    content_type_index = signup_post.find("has_signup_form_content_type(self.request.headers)")
+    argument_index = signup_post.find("signup_body_argument(request_body, 'email')")
     require("\nMAX_SIGNUP_BODY_BYTES = 4096\n" in server and
             "request_body = self.request.body or \"\"" in signup_post and
-            0 <= body_guard_index < argument_index and
-            "self.send_error(413)" in signup_post,
-            "signup body must be bounded with a generic 413 before argument access", failures)
+            0 <= body_guard_index < content_type_index < argument_index and
+            "self.send_error(413)" in signup_post and
+            "self.get_argument('email'" not in signup_post and
+            '"application/x-www-form-urlencoded"' in server,
+            "signup body must be bounded and URL-encoded before body-only email access", failures)
     require("has_valid_email_dots" in server,
             "signup route must reject unsafe email dot placement", failures)
     require("has_valid_domain_labels" in server and "len(label) <= 63" in server and
@@ -490,6 +495,21 @@ def main():
     security_source = read("SECURITY.md")
     changes_source = read("CHANGES.md")
     docs = readme_source + "\n" + vision_source + "\n" + security_source
+    signup_body_ownership_contract = (
+        "Signup email values come only from URL-encoded POST bodies, never URL query parameters."
+    )
+    for path, source in [
+        ("README.md", readme_source),
+        ("SECURITY.md", security_source),
+        ("VISION.md", vision_source),
+        ("CHANGES.md", changes_source),
+    ]:
+        require(signup_body_ownership_contract in source,
+                f"{path} must keep signup POST-body ownership contract", failures)
+    signup_test_source = read("tests/test_signup_persistence.py")
+    require("query-only signup email must not reach persistence" in signup_test_source and
+            "unsupported signup content type must not persist email" in signup_test_source,
+            "signup persistence tests must cover query-only and unsupported-content rejection", failures)
     location_independent_make_plan = read(LOCATION_INDEPENDENT_MAKE_PLAN_PATH)
     spaced_makefile_plan = read(SPACED_MAKEFILE_PLAN_PATH)
     require("make -f /path/to/nextinvite.com/Makefile check" in readme_source,
@@ -837,6 +857,15 @@ def main():
         and "make check" in checkout_verification,
         "checkout credential plan must record one completed status, completed "
         "work, and make check verification",
+        failures,
+    )
+
+    signup_body_ownership_plan = read(SIGNUP_BODY_OWNERSHIP_PLAN_PATH)
+    require(
+        "status: completed" in signup_body_ownership_plan.lower()
+        and "query-only" in signup_body_ownership_plan.lower()
+        and "make check" in signup_body_ownership_plan,
+        "signup body ownership plan must record completed regression and verification",
         failures,
     )
 
