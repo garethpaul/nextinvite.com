@@ -263,6 +263,21 @@ def main():
     require("self.send_error(400)" in server,
             "invalid signup emails must return a deterministic 400", failures)
     require('"xsrf_cookies": True' in server, "XSRF protection must remain enabled", failures)
+    require(
+        "def xsrf_cookie_settings(environment=None):" in server
+        and 'server_software.startswith("Development")' in server
+        and 'return {"secure": not is_development, "httponly": True}' in server
+        and '"xsrf_cookie_kwargs": xsrf_cookie_settings()' in server,
+        "production XSRF cookies must be Secure and HttpOnly without breaking the HTTP dev server",
+        failures,
+    )
+    tornado_web = read("next/tornado/web.py")
+    require(
+        'cookie_kwargs = self.settings.get("xsrf_cookie_kwargs", {})' in tornado_web
+        and "**cookie_kwargs" in tornado_web,
+        "vendored Tornado must apply app-owned XSRF cookie attributes",
+        failures,
+    )
 
     template = read("next/templates/home.html")
     require("{% autoescape None %}" not in template,

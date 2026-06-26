@@ -1,5 +1,32 @@
 # Changes
 
+## 2026-06-25 - P2 - Harden fresh XSRF cookies
+
+### Summary
+Configured the signup application's fresh production XSRF cookie as `Secure`
+and `HttpOnly` while preserving `HttpOnly`-only HTTP development cookies and
+keeping the contained Tornado framework default opt-in.
+
+### Work completed
+- Added app-owned XSRF cookie keyword arguments to the WSGI subset.
+- Added converted WSGI behavior coverage and six hostile source mutations.
+- Documented HTTPS ownership and hidden-field compatibility.
+
+### Validation
+- The fresh-cookie WSGI assertion failed before implementation with only
+  `_xsrf=<token>; Path=/`.
+- `python3 tests/test_vendored_tornado_surface.py` passed after implementation.
+- `/usr/bin/make check` and `git diff --check` passed.
+
+### Bugs / findings
+- P2: fresh XSRF tokens were sent without transport or script-access flags.
+
+### Blockers
+- No classic App Engine SDK or live Python 2 deployment was available.
+
+### Next action
+- Open a PR and complete Codex plus hosted review before merge.
+
 ## 2026-06-25 04:44 - P2 - Preserve the first signup entity
 
 ### Summary

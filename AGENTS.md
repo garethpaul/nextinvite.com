@@ -47,6 +47,9 @@
 - The signup form and server validator both enforce the 254-character email length boundary before persistence.
 - Email dot validation rejects leading, trailing, and consecutive dot cases before persistence.
 - Domain label validation rejects leading/trailing hyphen labels and labels over 63 characters before persistence.
+- Preserve application-owned production `Secure` and universal `HttpOnly`
+  attributes on fresh XSRF cookies; omit only `Secure` for the historical HTTP
+  development server, and keep signup JavaScript independent of cookie access.
 
 ## Agent workflow
 

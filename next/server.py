@@ -125,6 +125,13 @@ def persist_signup(email, signup_model=SignUp):
 		email=normalized_email,
 	)
 
+
+def xsrf_cookie_settings(environment=None):
+	values = os.environ if environment is None else environment
+	server_software = values.get("SERVER_SOFTWARE", "")
+	is_development = server_software.startswith("Development")
+	return {"secure": not is_development, "httponly": True}
+
 class HomeHandler(base.BaseHandler):
 	def get(self):
 		self.render("home.html")
@@ -148,6 +155,7 @@ settings = {
     "blog_title": u"Next invite",
     "template_path": os.path.join(os.path.dirname(__file__), "templates"),
     "xsrf_cookies": True,
+    "xsrf_cookie_kwargs": xsrf_cookie_settings(),
     "debug": False,
 }
 application = tornado.wsgi.WSGIApplication([
