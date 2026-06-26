@@ -1,5 +1,59 @@
 # Changes
 
+## 2026-06-26 12:47 PDT - P1 - Keep signup email out of URL queries
+
+### Summary
+Signup email values come only from URL-encoded POST bodies, never URL query parameters.
+
+### Work completed
+- Replaced merged query/body email lookup with bounded raw POST-body parsing.
+- Restricted signup handling to the URL-encoded media type used by both native
+  and asynchronous form submissions.
+- Added regressions proving query-only and unsupported-content requests cannot
+  reach datastore persistence while valid form bodies remain normalized.
+
+### Threads
+- None; work completed directly in this maintenance cycle.
+
+### Files changed
+- `next/server.py` — POST-body ownership and media-type validation.
+- `tests/test_signup_persistence.py` and `scripts/check-baseline.py` — behavior
+  and maintained contract coverage.
+- `README.md`, `SECURITY.md`, `VISION.md`,
+  `docs/plans/2026-06-26-signup-body-ownership.md`, and `CHANGES.md` — privacy
+  boundary and implementation evidence.
+
+### Validation
+- Red phase proved an empty-body POST could persist an email supplied only in
+  the URL query, and that a raw text body was accepted by the first draft.
+- Focused persistence and converted WSGI regressions passed on Python 3.11.8.
+- A Python 2.7 container confirmed URL-encoded body parsing and blank-value
+  behavior under the historical runtime's `urlparse.parse_qs`.
+- `make check` passed the baseline, 20 unittest cases, signup persistence, and
+  Make-root verification.
+- Three hostile mutations restoring query fallback, bypassing media-type
+  validation, or removing the documented contract were rejected.
+- Both hosted baseline jobs passed; CodeQL Actions, C/C++, and Python analyses
+  also passed.
+- `git diff --check` passed.
+- `/home/gpj/.codex/skills/codex-review/scripts/codex-review --mode branch`
+  targeted `origin/master` but could not authenticate to the external review
+  service (HTTP 401). Immutable manual review of the pushed commit found no
+  actionable issue.
+
+### Bugs / findings
+- P1: Tornado's legacy `get_argument()` merged URL and body values, allowing a
+  private signup email to be accepted from a loggable URL query.
+
+### Blockers
+- No classic App Engine SDK or live Python 2 deployment is available; the
+  maintained dependency-free and converted WSGI surfaces remain testable.
+- External Codex review authentication is unavailable in this environment; it
+  does not block the locally and hosted-validated privacy fix.
+
+### Next action
+- Open the PR, run Codex review, and merge only after hosted checks pass.
+
 ## 2026-06-25 - P2 - Harden fresh XSRF cookies
 
 ### Summary

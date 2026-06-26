@@ -258,7 +258,15 @@ class VendoredTornadoSurfaceTest(unittest.TestCase):
                 "httponly": True,
             }
 
-            def request(method, path, body="", extra_headers=None, cookie="_xsrf=legacy-token"):
+            def request(
+                method,
+                path,
+                body="",
+                extra_headers=None,
+                cookie="_xsrf=legacy-token",
+                query_string="",
+                content_type=None,
+            ):
                 status = []
                 response_headers = []
 
@@ -270,7 +278,7 @@ class VendoredTornadoSurfaceTest(unittest.TestCase):
                     "REQUEST_METHOD": method,
                     "SCRIPT_NAME": "",
                     "PATH_INFO": path,
-                    "QUERY_STRING": "",
+                    "QUERY_STRING": query_string,
                     "REMOTE_ADDR": "127.0.0.1",
                     "SERVER_NAME": "localhost",
                     "SERVER_PORT": "443",
@@ -284,8 +292,8 @@ class VendoredTornadoSurfaceTest(unittest.TestCase):
                     "wsgi.multiprocess": False,
                     "wsgi.run_once": False,
                 }
-                if body:
-                    environ["CONTENT_TYPE"] = (
+                if body or content_type is not None:
+                    environ["CONTENT_TYPE"] = content_type or (
                         "application/x-www-form-urlencoded; charset=UTF-8"
                     )
                     environ["CONTENT_LENGTH"] = str(len(body))
@@ -335,6 +343,25 @@ class VendoredTornadoSurfaceTest(unittest.TestCase):
             )
             assert retry_status == "200 OK", retry_status
             assert retry_body == b"ok", retry_body
+            assert len(saved_signups) == 1, saved_signups
+
+            query_status, _, _ = request(
+                "POST",
+                "/signup",
+                query_string="_xsrf=legacy-token&email=query%40example.com",
+                content_type="application/x-www-form-urlencoded",
+            )
+            assert query_status == "400 Bad Request", query_status
+            assert len(saved_signups) == 1, saved_signups
+
+            text_status, _, _ = request(
+                "POST",
+                "/signup",
+                body="email=text%40example.com",
+                query_string="_xsrf=legacy-token",
+                content_type="text/plain",
+            )
+            assert text_status == "400 Bad Request", text_status
             assert len(saved_signups) == 1, saved_signups
             """
             ,
