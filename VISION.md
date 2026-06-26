@@ -21,6 +21,8 @@ Priority:
 - Keep datastore behavior and templates easy to inspect
 - Avoid committing production secrets or private user data
 - Keep signup templates autoescaped and App Engine handlers on secure transport
+- Keep production XSRF cookies `Secure` and all XSRF cookies `HttpOnly` through
+  app-owned settings without breaking historical HTTP local development
 - Maintain security policy for the app
 - Keep signup email handling validated and covered by static contracts
 - Keep transactional idempotent signup inserts keyed by normalized email hashes

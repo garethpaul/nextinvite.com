@@ -93,6 +93,10 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   and restores it only through that request's retryable release path.
 - The signup body limit rejects form bodies larger than 4 KiB with a generic
   `413` before the handler reads the email argument.
+- Fresh production XSRF cookies are application-configured as `Secure` and
+  `HttpOnly`; every deployed handler redirects to HTTPS, and the signup script
+  submits the hidden form token without reading browser cookies. The historical
+  HTTP-only development server omits `Secure` but retains `HttpOnly`.
 - HTTP error responses remain generic even when vendored Tornado debug behavior
   is requested. HTML clients receive only the standard status page; JSON
   clients receive a stable `error.code`, `error.message`, and opaque

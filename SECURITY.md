@@ -48,6 +48,10 @@ Helpful reports include:
   protection from guessing known addresses. Transactional `get_or_insert()`
   prevents retries from overwriting the first signup timestamp.
 - Signup email inputs should stay normalized, format-checked, and capped at the 254-character address boundary before datastore persistence.
+- Fresh production XSRF cookies are configured `Secure` and `HttpOnly`; the
+  legacy app's deployed handlers enforce HTTPS and its script submits the
+  hidden token without reading `document.cookie`. The historical HTTP
+  development server omits only `Secure`.
 - The signup body limit should reject more than 4 KiB before handler argument
   access and return a generic `413` without echoing private form content.
 - HTTP error responses remain generic for production and local debugging;

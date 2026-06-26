@@ -827,7 +827,9 @@ class RequestHandler(object):
             if not token:
                 token = binascii.b2a_hex(uuid.uuid4().bytes)
                 expires_days = 30 if self.current_user else None
-                self.set_cookie("_xsrf", token, expires_days=expires_days)
+                cookie_kwargs = self.settings.get("xsrf_cookie_kwargs", {})
+                self.set_cookie("_xsrf", token, expires_days=expires_days,
+                                **cookie_kwargs)
             self._xsrf_token = token
         return self._xsrf_token
 

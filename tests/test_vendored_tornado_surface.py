@@ -29,6 +29,28 @@ ALLOWED_MODULES = {
 }
 
 
+def xsrf_cookie_contract_errors(server, web, template, app_yaml):
+    errors = []
+    for fragment in (
+        "def xsrf_cookie_settings(environment=None):",
+        'server_software.startswith("Development")',
+        'return {"secure": not is_development, "httponly": True}',
+        '"xsrf_cookie_kwargs": xsrf_cookie_settings()',
+    ):
+        if fragment not in server:
+            errors.append("application cookie attributes")
+            break
+    if 'cookie_kwargs = self.settings.get("xsrf_cookie_kwargs", {})' not in web:
+        errors.append("framework cookie setting")
+    if "**cookie_kwargs" not in web:
+        errors.append("framework cookie application")
+    if "document.cookie" in template:
+        errors.append("script cookie access")
+    if app_yaml.count("secure: always") < 4:
+        errors.append("HTTPS handler ownership")
+    return errors
+
+
 class VendoredTornadoSurfaceTest(unittest.TestCase):
     def run_converted_smoke(self, source, copy_application=False):
         with tempfile.TemporaryDirectory(prefix="nextinvite-tornado-") as directory:
@@ -231,8 +253,12 @@ class VendoredTornadoSurfaceTest(unittest.TestCase):
             assert routes == [("/$", "HomeHandler"), ("/signup$", "SignUpHandler")], routes
             assert server.application.settings["debug"] is False
             assert server.application.settings["xsrf_cookies"] is True
+            assert server.application.settings["xsrf_cookie_kwargs"] == {
+                "secure": True,
+                "httponly": True,
+            }
 
-            def request(method, path, body="", extra_headers=None):
+            def request(method, path, body="", extra_headers=None, cookie="_xsrf=legacy-token"):
                 status = []
                 response_headers = []
 
@@ -247,12 +273,11 @@ class VendoredTornadoSurfaceTest(unittest.TestCase):
                     "QUERY_STRING": "",
                     "REMOTE_ADDR": "127.0.0.1",
                     "SERVER_NAME": "localhost",
-                    "SERVER_PORT": "80",
+                    "SERVER_PORT": "443",
                     "SERVER_PROTOCOL": "HTTP/1.1",
                     "HTTP_HOST": "localhost",
-                    "HTTP_COOKIE": "_xsrf=legacy-token",
                     "wsgi.version": (1, 0),
-                    "wsgi.url_scheme": "http",
+                    "wsgi.url_scheme": "https",
                     "wsgi.input": io.StringIO(body),
                     "wsgi.errors": io.StringIO(),
                     "wsgi.multithread": False,
@@ -264,11 +289,26 @@ class VendoredTornadoSurfaceTest(unittest.TestCase):
                         "application/x-www-form-urlencoded; charset=UTF-8"
                     )
                     environ["CONTENT_LENGTH"] = str(len(body))
+                if cookie is not None:
+                    environ["HTTP_COOKIE"] = cookie
                 for name, value in (extra_headers or {}).items():
                     environ["HTTP_" + name.upper().replace("-", "_")] = value
 
                 response = b"".join(server.application(environ, start_response))
                 return status[0], response_headers, response
+
+            fresh_home_status, fresh_home_headers, _ = request(
+                "GET", "/", cookie=None
+            )
+            fresh_xsrf_cookies = [
+                value
+                for name, value in fresh_home_headers
+                if name.lower() == "set-cookie" and value.startswith("_xsrf=")
+            ]
+            assert fresh_home_status == "200 OK", fresh_home_status
+            assert len(fresh_xsrf_cookies) == 1, fresh_xsrf_cookies
+            assert "; Secure" in fresh_xsrf_cookies[0], fresh_xsrf_cookies
+            assert "; httponly" in fresh_xsrf_cookies[0].lower(), fresh_xsrf_cookies
 
             home_status, _, home_body = request("GET", "/")
             assert home_status == "200 OK", home_status
@@ -300,6 +340,54 @@ class VendoredTornadoSurfaceTest(unittest.TestCase):
             ,
             copy_application=True,
         )
+
+    def test_xsrf_cookie_contract_rejects_hostile_mutations(self):
+        server = (NEXT_ROOT / "server.py").read_text(encoding="utf-8")
+        web = WEB_SOURCE.read_text(encoding="utf-8")
+        template = (NEXT_ROOT / "templates" / "home.html").read_text(encoding="utf-8")
+        app_yaml = (NEXT_ROOT / "app.yaml").read_text(encoding="utf-8")
+        self.assertEqual([], xsrf_cookie_contract_errors(server, web, template, app_yaml))
+
+        mutations = {
+            "disabled Secure": (
+                server.replace('"secure": not is_development', '"secure": False', 1),
+                web,
+                template,
+                app_yaml,
+            ),
+            "disabled HttpOnly": (
+                server.replace('"httponly": True', '"httponly": False', 1),
+                web,
+                template,
+                app_yaml,
+            ),
+            "disabled development detection": (
+                server.replace('startswith("Development")', 'startswith("Production")', 1),
+                web,
+                template,
+                app_yaml,
+            ),
+            "detached cookie kwargs": (
+                server,
+                web.replace("                                **cookie_kwargs)", "                                )", 1),
+                template,
+                app_yaml,
+            ),
+            "browser cookie read": (
+                server,
+                web,
+                template + "\n<script>document.cookie</script>\n",
+                app_yaml,
+            ),
+            "non-HTTPS handler": (
+                server,
+                web,
+                template,
+                app_yaml.replace("secure: always", "secure: optional", 1),
+            ),
+        }
+        for name, sources in mutations.items():
+            self.assertNotEqual([], xsrf_cookie_contract_errors(*sources), name)
 
     def test_make_check_runs_surface_contract(self):
         makefile = (ROOT / "Makefile").read_text(encoding="utf-8")

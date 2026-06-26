@@ -50,6 +50,14 @@ def main():
     if len(FakeSignupModel.calls) != 2:
         raise AssertionError("each retry must use the transactional get-or-insert boundary")
 
+    if server.xsrf_cookie_settings({}) != {"secure": True, "httponly": True}:
+        raise AssertionError("production XSRF cookies must be Secure and HttpOnly")
+    if server.xsrf_cookie_settings({"SERVER_SOFTWARE": "Development/2.0"}) != {
+        "secure": False,
+        "httponly": True,
+    }:
+        raise AssertionError("legacy HTTP dev server must retain HttpOnly without Secure")
+
     print("signup persistence checks passed")
 
 
