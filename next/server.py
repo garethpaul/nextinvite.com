@@ -22,8 +22,11 @@ except ImportError:
     from urlparse import parse_qs
 
 
-LOCAL_PART_RE = re.compile(r"^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+$")
-DOMAIN_LABEL_RE = re.compile(r"^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$")
+# Anchor with \A and \Z, not ^ and $. Python's $ also matches immediately before
+# a trailing newline, so "user\n" satisfies ^...+$ and a bare LF survives
+# validation into the datastore write. \Z matches only at the very end.
+LOCAL_PART_RE = re.compile(r"\A[a-z0-9.!#$%&'*+/=?^_`{|}~-]+\Z")
+DOMAIN_LABEL_RE = re.compile(r"\A[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\Z")
 MAX_EMAIL_LENGTH = 254
 MAX_LOCAL_PART_LENGTH = 64
 MAX_SIGNUP_BODY_BYTES = 4096

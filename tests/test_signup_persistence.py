@@ -123,6 +123,46 @@ def main():
     if handler.errors != [400] or handler.writes:
         raise AssertionError("unsupported signup content type must fail with HTTP 400")
 
+    # Python's $ also matches immediately before a trailing newline, so an LF
+    # used to satisfy the local-part pattern and reach the datastore write. The
+    # baseline gate only substring-checks server.py for "LOCAL_PART_RE", so it
+    # cannot catch this; call the validator instead.
+    for rejected in (
+        "user\n@example.com",
+        "user\n\n@example.com",
+        "us\ner@example.com",
+        "user@example.com\n",
+        "user@exam\nple.com",
+        "user\r@example.com",
+    ):
+        if server.is_valid_email(rejected):
+            raise AssertionError(
+                "control characters must not pass email validation: %r" % (rejected,)
+            )
+
+    if not server.is_valid_email("user@example.com"):
+        raise AssertionError("plain addresses must stay valid")
+    if not server.has_valid_local_part("user@example.com"):
+        raise AssertionError("plain local parts must stay valid")
+    if server.has_valid_local_part("user\n@example.com"):
+        raise AssertionError("a trailing newline must not pass local-part validation")
+
+    persisted = []
+    original_persist_signup = server.persist_signup
+    server.persist_signup = persisted.append
+    try:
+        handler = FakeSignupHandler("email=user%0A%40example.com")
+        server.SignUpHandler.post(handler)
+    finally:
+        server.persist_signup = original_persist_signup
+
+    if persisted:
+        raise AssertionError(
+            "a newline-bearing local part must not reach persistence: %r" % (persisted,)
+        )
+    if handler.errors != [400] or handler.writes:
+        raise AssertionError("a newline-bearing local part must fail with HTTP 400")
+
     print("signup persistence checks passed")
 
 
